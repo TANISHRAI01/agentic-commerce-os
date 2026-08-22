@@ -1,89 +1,36 @@
-# Agentic Commerce OS
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-> **Razorpay AI Buildathon 2026 · Track 01 — AI Growth & Agentic Commerce**
->
-> *From "AI that actually recommends" to "AI that actually buys."*
+## Getting Started
 
-An AI-native commerce system where a human gives a natural-language shopping intent and an AI Buyer safely moves from intent to verified payment — with deterministic financial guardrails, human approval, and a complete audit trail.
-
-## What It Does
-
-```
-Human Intent → AI Discovery → AI Decision → Policy Check → Human Approval →
-Razorpay Payment (TEST MODE) → Verification → Audit Trail
-```
-
-**Key principle:** AI recommends, deterministic code authorizes, humans approve.
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend + API | Next.js 14 (App Router) + TypeScript |
-| Database | SQLite (better-sqlite3) |
-| AI | Google Gemini API |
-| Payments | Razorpay Standard Checkout (Test Mode) |
-| Styling | Vanilla CSS |
-| Testing | Vitest |
-
-## Quick Start
+First, run the development server:
 
 ```bash
-# 1. Clone
-git clone https://github.com/TANISHRAI01/agentic-commerce-os.git
-cd agentic-commerce-os
-
-# 2. Install dependencies
-npm install
-
-# 3. Set up environment
-cp .env.example .env
-# Edit .env with your Razorpay test keys and Gemini API key
-
-# 4. Seed the database
-npm run seed
-
-# 5. Start development server
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Project Structure
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-```
-src/
-├── app/          # Next.js pages + API routes
-├── agents/       # AI agents (Discovery, Decision, Commerce)
-├── engine/       # Deterministic engines (Policy, State Machine, Idempotency)
-├── services/     # External integrations (Razorpay, LLM, Catalog)
-├── db/           # SQLite schema, connection, seed data
-├── audit/        # Structured event logging
-├── types/        # Shared TypeScript types
-└── components/   # React UI components
-docs/
-├── PROJECT_PLAN.md
-├── ARCHITECTURE.md
-├── AGENT_HANDOFF.md
-└── DECISIONS.md
-```
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Safety Guarantees
+## Learn More
 
-- ⚠️ **TEST MODE ONLY** — Razorpay test credentials, no real money moves
-- 🔒 **Deterministic Policy Engine** — AI cannot override spending limits
-- 👤 **Human Approval** — Required above configurable threshold
-- 🔑 **Idempotency** — Duplicate payments prevented at the source
-- ⏱️ **Safe Timeout Handling** — Verify before retry, never blind retry
-- 📋 **Complete Audit Trail** — Every operation logged with structured events
+To learn more about Next.js, take a look at the following resources:
 
-## Documentation
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-- [Project Plan](docs/PROJECT_PLAN.md) — Phase status and deliverables
-- [Architecture](docs/ARCHITECTURE.md) — System design (source of truth)
-- [Agent Handoff](docs/AGENT_HANDOFF.md) — State, decisions, risks
-- [Decisions](docs/DECISIONS.md) — Engineering rationale for panel Q&A
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## License
+## Deploy on Vercel
 
-MIT
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

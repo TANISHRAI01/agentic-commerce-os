@@ -44,6 +44,15 @@
 | 17 | **Seeded demo mode** over live-only | Only live LLM calls | Demo determinism: same intents always produce same results. Eliminates LLM latency/non-determinism risk during judging. |
 | 18 | **Expandable audit timeline** over separate page | Audit on a different page/tab | Keeps the user in context, shows the AI's reasoning alongside the conversation, reinforces transparency. |
 
+## Phase 1 Decisions
+
+| # | Decision | Alternative Considered | Rationale |
+|---|----------|----------------------|-----------|
+| 19 | **sql.js** (pure JS SQLite) over better-sqlite3 | better-sqlite3 (native addon) | better-sqlite3 requires Visual Studio C++ build tools (node-gyp) for native compilation on Windows. sql.js is a pure JavaScript SQLite compiled via Emscripten — zero native dependencies, works on any platform without build tools. Slight performance trade-off is irrelevant for a single-user hackathon demo. |
+| 20 | **Zod** for runtime schema validation over TypeScript-only types | Plain TypeScript interfaces | Zod provides runtime validation (catches bad data from LLM/API before it hits the DB), automatic TypeScript type inference (no type duplication), and composable schema building. Essential for the "validate LLM output against schema" requirement. |
+| 21 | **60 products across 8 categories** over fewer | 10-20 products | Enough variety to make demo realistic (user can search headphones, laptops, books, etc.) without being so large that seed/search is slow. 6 merchants with different trust tiers enable meaningful policy demonstrations. |
+| 22 | **Transaction service auto-audits** on every state transition | Manual audit calls at each transition site | Guarantees no state transition goes unrecorded. Reduces the chance of an engineer forgetting to add audit logging when adding new transition paths. |
+
 ---
 
 *This document is updated at the end of every phase.*

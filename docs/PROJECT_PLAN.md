@@ -11,7 +11,7 @@
 | Phase | Name | Status | Tag | Notes |
 |-------|------|--------|-----|-------|
 | 0 | Architecture & Documentation | ✅ Complete | `phase-0` | All living docs created, architecture designed |
-| 1 | Foundation | 🔲 Not Started | — | Project scaffold, DB, catalog, types, API routes |
+| 1 | Foundation | ✅ Complete | `phase-1` | 100 tests passing, 60 products, 6 merchants, state machine, audit system |
 | 2 | AI Buyer | 🔲 Not Started | — | Discovery + Decision agents, LLM, intent parsing |
 | 3 | Policy + Approval | 🔲 Not Started | — | Deterministic policy engine, approval flow |
 | 4 | Razorpay Payment | 🔲 Not Started | — | Test-mode integration, order creation, polling |
@@ -40,23 +40,26 @@
 
 ---
 
-### Phase 1 — Foundation
+### Phase 1 — Foundation ✅
 
 **Goal:** Working project scaffold with database, seed data, type system, and basic API routes.
 
 **Deliverables:**
-- [ ] Next.js 14 project initialized with TypeScript
-- [ ] SQLite database with schema (`better-sqlite3`)
-- [ ] Synthetic product catalog (50+ products, 5+ merchants)
-- [ ] TypeScript type definitions for all core models
-- [ ] Basic API route stubs (intent, discover, decide, policy, checkout, payment, audit)
-- [ ] Database seed script
-- [ ] Catalog query service
-- [ ] Basic UI shell (chat interface layout)
-- [ ] Tests: DB connection, seed data integrity
-- [ ] `phase-1` tag
+- [x] Next.js 14 project initialized with TypeScript
+- [x] SQLite database with schema (sql.js — pure JS, no native deps)
+- [x] Synthetic product catalog (60 products, 6 merchants, 8 categories)
+- [x] Zod schemas + TypeScript types for all core models (Product, Merchant, User, ShoppingIntent, Cart, Policy, Transaction, Payment, AuditEvent)
+- [x] 9 API route stubs (intent, discover, decide, policy, approve, checkout, payment/verify, payment/status, audit)
+- [x] Database seed script (`npm run seed`)
+- [x] Catalog query service with search, filtering, pagination
+- [x] Transaction state machine (17 states, validated transitions)
+- [x] Transaction service with CRUD + auto-audit
+- [x] Audit system (append-only events, retrieval, timeline builder)
+- [x] Basic UI shell (dark theme, chat interface, suggestion chips)
+- [x] 100 passing tests (state machine, schemas, catalog, audit)
+- [x] `phase-1` tag
 
-**Definition of Done:** `npm run dev` starts, catalog loads from SQLite, API routes return typed responses.
+**Definition of Done:** ✅ `npm run dev` starts, catalog loads from SQLite, API routes return typed responses, 100/100 tests pass.
 
 ---
 
