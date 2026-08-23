@@ -14,15 +14,22 @@ import { saveDb } from '@/db/connection';
  */
 export function createTransaction(
   db: SqlJsDatabase,
-  params?: { intentRaw?: string; intentId?: string },
+  params?: { intentRaw?: string; intentId?: string; idempotencyKey?: string },
 ): Transaction {
+  if (params?.idempotencyKey) {
+    const existing = getTransactionByIdempotencyKey(db, params.idempotencyKey);
+    if (existing) {
+      return existing;
+    }
+  }
+
   const now = new Date().toISOString();
   const txn: Transaction = {
     id: uuidv4(),
     state: 'CREATED',
     intentId: params?.intentId,
     intentRaw: params?.intentRaw,
-    idempotencyKey: uuidv4(),
+    idempotencyKey: params?.idempotencyKey || uuidv4(),
     createdAt: now,
     updatedAt: now,
   };

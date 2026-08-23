@@ -53,6 +53,20 @@
 | 21 | **60 products across 8 categories** over fewer | 10-20 products | Enough variety to make demo realistic (user can search headphones, laptops, books, etc.) without being so large that seed/search is slow. 6 merchants with different trust tiers enable meaningful policy demonstrations. |
 | 22 | **Transaction service auto-audits** on every state transition | Manual audit calls at each transition site | Guarantees no state transition goes unrecorded. Reduces the chance of an engineer forgetting to add audit logging when adding new transition paths. |
 
+## Phase 2 Decisions (AI Buyer)
+
+| # | Decision | Alternative Considered | Rationale |
+|---|----------|----------------------|-----------|
+| 23 | **Unified `/api/shop` endpoint** over multi-step client calls | Client calls intent → discover → decide separately | Single network round-trip reduces latency and frontend complexity. Individual endpoints still exist for debugging and testing. |
+| 24 | **Candidate-only ranking** (LLM sees filtered results) over full catalog | Send entire catalog to LLM for ranking | Prevents hallucination of products outside search results. Reduces prompt size. LLM only ranks products that deterministic search already approved. |
+| 25 | **Post-validation of product IDs** after LLM ranking | Trust LLM output directly | Double safety net: verify selected product ID and all alternative IDs exist in both the candidate list and the database. Catches hallucinated IDs. |
+| 26 | **Mocked LLM for tests** over live API calls | Require GEMINI_API_KEY for test suite | Tests must be deterministic and runnable without API keys. Schema validation and hallucination prevention are tested with mock data. |
+| 27 | **`gemini-1.5-flash`** over `gemini-1.5-pro` | gemini-1.5-pro (higher quality) | Flash is faster, cheaper, and sufficient for structured extraction (low temperature + schema validation). Pro would add latency without meaningful quality improvement for this use case. |
+| 28 | **Search relaxation** (progressive filter loosening) over strict-only search | Return empty when filters match nothing | Better UX: if strict filters return nothing, progressively relax (remove tags, then price limit) to still provide relevant results. User is notified when search was broadened. |
+| 29 | **Retry on malformed LLM output** (2 retries) over fail-fast | Return error immediately on bad output | LLMs occasionally return malformed JSON. 2 retries with a stronger instruction catches most transient issues. If all retries fail, a clear error is returned. |
+| 30 | **Separate `ParsedIntentSchema` and `RankingResultSchema`** over reusing existing schemas | Extend ShoppingIntentSchema for LLM output | LLM output shape differs from internal schemas (e.g., `maximumPrice` vs `maxBudget`, `ambiguityQuestions`). Separate schemas keep the LLM interface decoupled from internal types. |
+
 ---
 
 *This document is updated at the end of every phase.*
+

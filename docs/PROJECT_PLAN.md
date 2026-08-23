@@ -12,7 +12,7 @@
 |-------|------|--------|-----|-------|
 | 0 | Architecture & Documentation | ✅ Complete | `phase-0` | All living docs created, architecture designed |
 | 1 | Foundation | ✅ Complete | `phase-1` | 100 tests passing, 60 products, 6 merchants, state machine, audit system |
-| 2 | AI Buyer | 🔲 Not Started | — | Discovery + Decision agents, LLM, intent parsing |
+| 2 | AI Buyer | ✅ Complete | `phase-2` | Discovery + Decision agents, Gemini LLM, 153 tests passing |
 | 3 | Policy + Approval | 🔲 Not Started | — | Deterministic policy engine, approval flow |
 | 4 | Razorpay Payment | 🔲 Not Started | — | Test-mode integration, order creation, polling |
 | 5 | Failure Handling | 🔲 Not Started | — | Timeout, safe recovery, idempotency |
@@ -63,21 +63,21 @@
 
 ---
 
-### Phase 2 — AI Buyer
+### Phase 2 — AI Buyer ✅
 
 **Goal:** Natural-language intent parsing, product discovery, and AI-powered ranking.
 
 **Deliverables:**
-- [ ] LLM provider abstraction (Gemini SDK)
-- [ ] Discovery Agent: intent → structured query → catalog search
-- [ ] Decision Agent: candidates → ranked recommendations with explanations
-- [ ] Intent parsing with JSON schema validation
-- [ ] Product search with filtering (category, price, delivery, rating)
-- [ ] UI: chat interface, product cards, ranking explanation
-- [ ] Tests: intent parsing, product ranking logic
+- [x] LLM provider abstraction (Gemini SDK — `src/services/llm.ts`)
+- [x] Discovery Agent: intent → structured query → catalog search (`src/agents/discovery.ts`)
+- [x] Decision Agent: candidates → ranked recommendations with explanations (`src/agents/decision.ts`)
+- [x] Intent parsing with JSON schema validation (`ParsedIntentSchema`, `RankingResultSchema`)
+- [x] Product search with filtering (category, price, delivery, rating) — existing from Phase 1
+- [x] UI: conversational chat, product cards, ranking explanation, loading/error states
+- [x] Tests: 53 new tests (LLM, discovery, decision, evaluation) — 153 total
 - [ ] `phase-2` tag
 
-**Definition of Done:** User types shopping intent → system returns ranked products with explanations.
+**Definition of Done:** ✅ User types shopping intent → system returns ranked products with explanations.
 
 ---
 
@@ -164,4 +164,4 @@
 
 ## What's Next
 
-**Immediate:** Begin Phase 1 — Foundation (project scaffold, DB, catalog, types).
+**Immediate:** Begin Phase 3 — Policy + Approval (deterministic policy engine, approval flow, policy UI).

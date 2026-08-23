@@ -21,15 +21,15 @@
 |-------|--------|
 | 0 — Architecture & Docs | ✅ Complete (`phase-0` tag) |
 | 1 — Foundation | ✅ Complete (`phase-1` tag) |
-| 2 — AI Buyer | 🔲 Not Started |
+| 2 — AI Buyer | ✅ Complete |
 | 3 — Policy + Approval | 🔲 Not Started |
 | 4 — Razorpay Payment | 🔲 Not Started |
 | 5 — Failure Handling | 🔲 Not Started |
 | 6 — Audit + Premium UX | 🔲 Not Started |
 | 7–9 — Stretch | 🔲 Not Started (only after 1–6 stable) |
 
-**Last completed phase:** 1
-**Next phase to build:** 2 — AI Buyer
+**Last completed phase:** 2
+**Next phase to build:** 3 — Policy + Approval
 
 ---
 
@@ -50,20 +50,31 @@
 - **UI shell**: Dark-themed chat interface with suggestion chips, Inter font, glassmorphism design system
 - **Tests**: 100 tests passing (state machine, schemas, catalog search, audit events)
 
+### Phase 2 — AI Buyer
+- **LLM Service** (`src/services/llm.ts`): Google Gemini abstraction with structured output generation, JSON extraction (strips code fences), Zod schema validation, retry logic (2 retries), custom error classes
+- **Discovery Agent** (`src/agents/discovery.ts`): Natural language → structured intent parsing via Gemini. ParsedIntentSchema with category, price range, delivery deadline, required/preferred attributes, exclusions, brand, quantity, ambiguity questions. Maps intent to CatalogSearchParams for deterministic search
+- **Decision Agent** (`src/agents/decision.ts`): Product ranking with explainability. Receives real catalog candidates only, ranks by price fit, delivery, rating, attributes, merchant trust. Post-validates all product IDs (prevents hallucination). Returns structured reasons + alternatives with explanations
+- **API Routes**: Intent route (LLM-powered parsing + transaction creation), Decide route (LLM-powered ranking + product validation), Unified `/api/shop` route (orchestrates full pipeline: intent → search → rank in one call, with search relaxation)
+- **UI**: Conversational shopping interface with chat history, ProductCard component (trust badges, star ratings, delivery, stock, tags), RankingExplanation component (confidence ring, reason chips, expandable alternatives), LoadingState (step-by-step progress, shimmer skeletons), ChatMessage (user/AI/error variants), error/retry handling
+- **Types**: `ParsedIntentSchema` (intent.ts), `RankingResultSchema` (ranking.ts) — full Zod schemas for all LLM output
+- **Tests**: 53 new tests across 4 suites (llm-service, discovery, decision, evaluation). Total: 153 tests passing
+- **Safety**: LLM only discovers and recommends. No payments, no price modification, no inventory invention. All LLM output schema-validated. Hallucinated product IDs rejected
+
 ---
 
 ## What To Do Next
 
-**Phase 2 — AI Buyer:**
-1. Install `@google/generative-ai` SDK
-2. Create LLM service abstraction (`src/services/llm.ts`)
-3. Implement Discovery Agent: natural language → structured intent → catalog query
-4. Implement Decision Agent: product candidates → ranked recommendations with explanations
-5. JSON schema validation on all LLM outputs
-6. Wire chat UI to the AI pipeline (send intent → show products → show ranking)
-7. Add product card and ranking explanation UI components
-8. Tests for intent parsing and product ranking logic
-9. Tag `phase-2`
+**Phase 3 — Policy + Approval:**
+1. Implement Policy Engine as pure function: `(cart, config) → PolicyResult`
+2. Budget check (cart total vs user budget)
+3. Agent spending limit check (amount vs agent auto-transact limit)
+4. Merchant trust tier check (merchant tier vs allowed tiers)
+5. Approval flow: auto-approve below threshold, human approval above
+6. Approval dialog UI component
+7. Policy result UI (pass/fail badges with reasons)
+8. Wire to transaction state machine (CART_READY → POLICY_PENDING → POLICY_FAIL/APPROVAL_REQUIRED/AUTO_APPROVED)
+9. Tests for all policy check combinations
+10. Tag `phase-3`
 
 ---
 
@@ -103,6 +114,10 @@
 - Idempotency keys for duplicate payment prevention
 - Transaction state machine (not boolean flags)
 - Zod for runtime schema validation (not just TypeScript types)
+- Unified `/api/shop` endpoint (not multi-step client calls)
+- Candidate-only ranking (LLM never sees full catalog, only filtered results)
+- Mocked LLM for tests (no API key needed to run tests)
+- `gemini-1.5-flash` model (fast, cheap, sufficient for structured extraction)
 
 ---
 
@@ -118,12 +133,12 @@
 
 ```bash
 npm run dev      # Start dev server (localhost:3000)
-npm test         # Run all tests (100 passing)
+npm test         # Run all tests (153 passing)
 npm run seed     # Seed the database with 60 products
 npm run build    # Build for production
 ```
 
 ---
 
-*Last updated: Phase 1 completion*
+*Last updated: Phase 2 completion*
 *Update this file at the end of every phase.*
