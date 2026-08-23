@@ -1,15 +1,32 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import ProductCard from './ProductCard';
 import RankingExplanation from './RankingExplanation';
+import PolicyPanel from './PolicyPanel';
+import ApprovalDialog from './ApprovalDialog';
+
+interface PolicyCheck {
+  name: string;
+  result: 'PASS' | 'FAIL';
+  reason: string;
+  details: { actual: number | string; limit: number | string };
+}
+
+interface PolicyResult {
+  overall: 'PASS' | 'FAIL';
+  requiresApproval: boolean;
+  approvalReason?: string;
+  checks: PolicyCheck[];
+}
 
 interface ChatMessageProps {
   type: 'user' | 'ai' | 'error';
   content: string;
   timestamp?: string;
-  // AI message data
   shopResult?: {
+    transactionId?: string;
+    transactionState?: string;
     intent?: {
       category: string;
       maximumPrice?: number;
@@ -70,11 +87,19 @@ interface ChatMessageProps {
       attributes: Record<string, string>;
       stock: number;
     }>;
+    policyResult?: PolicyResult;
+    requiresApproval?: boolean;
     searchRelaxed?: boolean;
   };
 }
 
 export default function ChatMessage({ type, content, timestamp, shopResult }: ChatMessageProps) {
+  const [transactionState, setTransactionState] = useState(shopResult?.transactionState ?? '');
+
+  const handleApprovalDecision = (decision: 'APPROVED' | 'REJECTED') => {
+    setTransactionState(decision === 'APPROVED' ? 'APPROVED' : 'BLOCKED');
+  };
+
   if (type === 'user') {
     return (
       <div className="chat-message chat-message-user">
@@ -98,6 +123,9 @@ export default function ChatMessage({ type, content, timestamp, shopResult }: Ch
       </div>
     );
   }
+
+  const currentState = transactionState || shopResult?.transactionState || '';
+  const isBlocked = currentState === 'BLOCKED';
 
   // AI message
   return (
@@ -167,8 +195,54 @@ export default function ChatMessage({ type, content, timestamp, shopResult }: Ch
           />
         )}
 
+        {/* Policy Panel */}
+        {shopResult?.policyResult && (
+          <PolicyPanel
+            policyResult={shopResult.policyResult}
+            transactionState={currentState}
+          />
+        )}
+
+        {/* Approval Dialog — only when awaiting approval */}
+        {shopResult?.requiresApproval &&
+          shopResult?.transactionId &&
+          shopResult?.selectedProduct &&
+          shopResult?.policyResult &&
+          currentState === 'APPROVAL_REQUIRED' && (
+          <ApprovalDialog
+            transactionId={shopResult.transactionId}
+            productName={shopResult.selectedProduct.name}
+            productPrice={shopResult.selectedProduct.price}
+            merchantTrustTier={shopResult.selectedProduct.merchantTrustTier}
+            policyResult={shopResult.policyResult}
+            onDecision={handleApprovalDecision}
+          />
+        )}
+
+        {/* Authorization Granted banner */}
+        {currentState === 'APPROVED' && (
+          <div className="authorization-granted">
+            <span className="authorization-icon">✅</span>
+            <div>
+              <div className="authorization-title">Authorization Granted</div>
+              <div className="authorization-subtitle">Payment processing will be available in Phase 4</div>
+            </div>
+          </div>
+        )}
+
+        {/* Blocked banner */}
+        {isBlocked && shopResult?.policyResult?.overall === 'PASS' && currentState === 'BLOCKED' && (
+          <div className="authorization-blocked">
+            <span>🚫</span>
+            <div>
+              <div className="authorization-title">Purchase Rejected</div>
+              <div className="authorization-subtitle">This transaction has been cancelled</div>
+            </div>
+          </div>
+        )}
+
         {/* Alternative products */}
-        {shopResult?.ranking?.alternatives && shopResult.ranking.alternatives.length > 0 && (
+        {shopResult?.ranking?.alternatives && shopResult.ranking.alternatives.length > 0 && !isBlocked && (
           <div className="alternatives-section">
             <h4 className="alternatives-title">Also considered:</h4>
             {shopResult.ranking.alternatives.slice(0, 3).map((alt, i) => (

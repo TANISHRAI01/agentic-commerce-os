@@ -13,7 +13,7 @@
 | 0 | Architecture & Documentation | ✅ Complete | `phase-0` | All living docs created, architecture designed |
 | 1 | Foundation | ✅ Complete | `phase-1` | 100 tests passing, 60 products, 6 merchants, state machine, audit system |
 | 2 | AI Buyer | ✅ Complete | `phase-2` | Discovery + Decision agents, Gemini LLM, 153 tests passing |
-| 3 | Policy + Approval | 🔲 Not Started | — | Deterministic policy engine, approval flow |
+| 3 | Policy + Approval | ✅ Complete | `phase-3` | Deterministic policy engine, approval flow |
 | 4 | Razorpay Payment | 🔲 Not Started | — | Test-mode integration, order creation, polling |
 | 5 | Failure Handling | 🔲 Not Started | — | Timeout, safe recovery, idempotency |
 | 6 | Audit + Premium UX | 🔲 Not Started | — | Audit timeline, metrics, demo mode, polish |
@@ -81,20 +81,20 @@
 
 ---
 
-### Phase 3 — Policy + Approval
+### Phase 3 — Policy + Approval ✅
 
 **Goal:** Deterministic financial guardrails and human-in-the-loop approval.
 
 **Deliverables:**
-- [ ] Policy Engine: budget check, agent spending limit, merchant trust tier
-- [ ] Approval flow: auto-approve below threshold, require human above
-- [ ] Policy result UI (pass/fail badges with reasons)
-- [ ] Approval dialog UI
-- [ ] Transaction state machine (initiated → policy → approval → ready)
-- [ ] Tests: all policy check combinations, edge cases
-- [ ] `phase-3` tag
+- [x] Policy Engine: budget check, agent spending limit, merchant trust tier
+- [x] Approval flow: auto-approve below threshold, require human above
+- [x] Policy result UI (pass/fail badges with reasons)
+- [x] Approval dialog UI
+- [x] Transaction state machine (initiated → policy → approval → ready)
+- [x] Tests: all policy check combinations, edge cases (38 tests)
+- [x] `phase-3` tag
 
-**Definition of Done:** Policy engine blocks overspend, explains why, approval dialog works.
+**Definition of Done:** ✅ Policy engine blocks overspend, explains why, approval dialog works.
 
 ---
 
@@ -164,4 +164,4 @@
 
 ## What's Next
 
-**Immediate:** Begin Phase 3 — Policy + Approval (deterministic policy engine, approval flow, policy UI).
+**Immediate:** Begin Phase 4 — Razorpay Payment (test-mode integration, order creation, checkout, status polling).

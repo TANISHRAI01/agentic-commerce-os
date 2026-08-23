@@ -1127,3 +1127,346 @@ body {
     font-size: 22px;
   }
 }
+
+/* ============================================================
+   Phase 3 — Policy + Approval Styles
+   ============================================================ */
+
+/* ── Policy Panel ─────────────────────────────────────────── */
+
+.policy-panel {
+  margin-top: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  overflow: hidden;
+  animation: fadeInUp 0.3s ease;
+}
+
+.policy-panel-blocked {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.04);
+}
+
+.policy-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.policy-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.policy-overall-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+
+.policy-checks {
+  padding: 4px 0;
+}
+
+.policy-check-row,
+.policy-approval-row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  transition: background 0.15s;
+}
+
+.policy-check-row:hover,
+.policy-approval-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.policy-approval-row {
+  border-top: 1px solid var(--border-color);
+}
+
+.policy-check-icon {
+  font-size: 14px;
+  text-align: center;
+}
+
+.policy-check-name {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.policy-check-limit {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+.policy-check-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* ── Badges ──────────────────────────────────────────────── */
+
+.badge-pass {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.badge-fail {
+  background: var(--error-bg);
+  color: var(--error);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.badge-waiting {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ── Policy Status Messages ──────────────────────────────── */
+
+.policy-status-blocked {
+  margin: 4px 14px 10px;
+  padding: 8px 12px;
+  background: var(--error-bg);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--error);
+  line-height: 1.5;
+}
+
+.policy-status-approved {
+  margin: 4px 14px 10px;
+  padding: 8px 12px;
+  background: var(--success-bg);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--success);
+  text-align: center;
+}
+
+/* ── Approval Dialog ─────────────────────────────────────── */
+
+.approval-dialog {
+  margin-top: 12px;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: var(--radius-md);
+  background: rgba(99, 102, 241, 0.04);
+  overflow: hidden;
+  animation: fadeInUp 0.4s ease;
+}
+
+.approval-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+  background: rgba(99, 102, 241, 0.06);
+}
+
+.approval-dialog-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.approval-dialog-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.approval-dialog-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.approval-product-summary {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.approval-product-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.approval-product-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-primary);
+  font-family: var(--font-mono);
+}
+
+.approval-product-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.approval-policy-summary {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.approval-policy-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.approval-policy-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.approval-policy-check-pass {
+  color: var(--success);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.approval-error {
+  margin: 8px 14px;
+  padding: 8px 12px;
+  background: var(--error-bg);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--error);
+}
+
+.approval-actions {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+}
+
+.approval-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.approval-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.approval-btn-approve {
+  background: var(--success);
+  color: #fff;
+}
+
+.approval-btn-approve:hover:not(:disabled) {
+  background: #16a34a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.approval-btn-reject {
+  background: var(--bg-card);
+  color: var(--error);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.approval-btn-reject:hover:not(:disabled) {
+  background: var(--error-bg);
+  transform: translateY(-1px);
+}
+
+/* ── Authorization Banners ───────────────────────────────── */
+
+.authorization-granted {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 14px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: var(--radius-md);
+  animation: fadeInUp 0.4s ease;
+}
+
+.authorization-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.authorization-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--success);
+}
+
+.authorization-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.authorization-blocked {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 14px;
+  background: var(--error-bg);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-md);
+  animation: fadeInUp 0.3s ease;
+  font-size: 20px;
+}
+

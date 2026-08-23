@@ -123,8 +123,21 @@ export const PolicyConfigSchema = z.object({
   agentSpendingLimit: z.number().positive(),
   approvalThreshold: z.number().positive(),
   allowedMerchantTiers: z.array(MerchantTrustTier),
+  configCurrency: z.string().default('INR'),
 });
 export type PolicyConfig = z.infer<typeof PolicyConfigSchema>;
+
+export const PolicyEvaluationInputSchema = z.object({
+  cartTotal: z.number().min(0),
+  cartCurrency: z.string().min(1),
+  merchantTrustTier: MerchantTrustTier,
+  userBudget: z.number().positive(),
+  agentSpendingLimit: z.number().positive(),
+  approvalThreshold: z.number().positive(),
+  allowedMerchantTiers: z.array(MerchantTrustTier).min(1),
+  configCurrency: z.string().min(1).default('INR'),
+});
+export type PolicyEvaluationInput = z.infer<typeof PolicyEvaluationInputSchema>;
 
 // ── Transaction States ───────────────────────────────────────
 export const TransactionState = z.enum([
@@ -206,8 +219,11 @@ export const AuditEventType = z.enum([
   'CART_CREATED',
   'POLICY_CHECK',
   'POLICY_RESULT',
+  'POLICY_EVALUATED',
   'APPROVAL_REQUESTED',
   'APPROVAL_RECEIVED',
+  'APPROVAL_GRANTED',
+  'APPROVAL_REJECTED',
   'ORDER_CREATED',
   'PAYMENT_INITIATED',
   'PAYMENT_STATUS_POLLED',

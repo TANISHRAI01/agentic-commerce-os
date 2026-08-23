@@ -6,6 +6,7 @@ import { searchProducts, getProductById } from '@/services/catalog';
 import { parseIntentToSearchParams } from '@/agents/discovery';
 import { rankProducts, HallucinatedProductError } from '@/agents/decision';
 import { LLMValidationError, LLMConnectionError } from '@/services/llm';
+import { evaluatePolicy, DEFAULT_POLICY_CONFIG } from '@/engine/policy-engine';
 import type { Product } from '@/types/schemas';
 
 /**
@@ -156,6 +157,61 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // ── Step 5: Run Policy Engine (deterministic) ──
+    transitionTransaction(db, txn.id, 'POLICY_PENDING');
+
+    createAuditEvent(db, {
+      transactionId: txn.id,
+      event: 'POLICY_CHECK',
+      result: 'INFO',
+      reason: `Policy check started for ${selectedProduct.name} (₹${selectedProduct.price})`,
+      metadata: {
+        productId: selectedProduct.id,
+        productPrice: selectedProduct.price,
+        merchantTrustTier: selectedProduct.merchantTrustTier,
+      },
+    });
+
+    const policyResult = evaluatePolicy({
+      cartTotal: selectedProduct.price,
+      cartCurrency: selectedProduct.currency,
+      merchantTrustTier: selectedProduct.merchantTrustTier,
+      ...DEFAULT_POLICY_CONFIG,
+    });
+
+    createAuditEvent(db, {
+      transactionId: txn.id,
+      event: 'POLICY_EVALUATED',
+      result: policyResult.overall === 'PASS' ? 'SUCCESS' : 'FAILURE',
+      reason: `Policy ${policyResult.overall}: ${policyResult.checks.map(c => `${c.name}=${c.result}`).join(', ')}`,
+      metadata: { policyResult },
+    });
+
+    // Transition based on policy result
+    let policyState: 'POLICY_FAIL' | 'APPROVAL_REQUIRED' | 'AUTO_APPROVED';
+
+    if (policyResult.overall === 'FAIL') {
+      policyState = 'POLICY_FAIL';
+    } else if (policyResult.requiresApproval) {
+      policyState = 'APPROVAL_REQUIRED';
+    } else {
+      policyState = 'AUTO_APPROVED';
+    }
+
+    transitionTransaction(db, txn.id, policyState, {
+      policyResult,
+      approvalStatus: policyResult.requiresApproval ? 'PENDING' : undefined,
+    });
+
+    // If policy failed, block the transaction
+    let finalState = policyState as string;
+    if (policyState === 'POLICY_FAIL') {
+      transitionTransaction(db, txn.id, 'BLOCKED', {
+        failureReason: `Policy check failed: ${policyResult.checks.filter(c => c.result === 'FAIL').map(c => c.reason).join('; ')}`,
+      });
+      finalState = 'BLOCKED';
+    }
+
     // ── Build response ──
     // Enrich alternatives with full product data
     const alternativesWithProducts = ranking.alternatives.map(alt => {
@@ -178,6 +234,9 @@ export async function POST(request: NextRequest) {
       selectedProduct,
       searchRelaxed,
       message: ranking.summary,
+      policyResult,
+      requiresApproval: policyResult.requiresApproval,
+      transactionState: finalState,
     });
   } catch (error) {
     if (error instanceof HallucinatedProductError) {

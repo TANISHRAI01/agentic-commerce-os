@@ -21,15 +21,15 @@
 |-------|--------|
 | 0 — Architecture & Docs | ✅ Complete (`phase-0` tag) |
 | 1 — Foundation | ✅ Complete (`phase-1` tag) |
-| 2 — AI Buyer | ✅ Complete |
-| 3 — Policy + Approval | 🔲 Not Started |
+| 2 — AI Buyer | ✅ Complete (`v0.2-ai-buyer` tag) |
+| 3 — Policy + Approval | ✅ Complete |
 | 4 — Razorpay Payment | 🔲 Not Started |
 | 5 — Failure Handling | 🔲 Not Started |
 | 6 — Audit + Premium UX | 🔲 Not Started |
 | 7–9 — Stretch | 🔲 Not Started (only after 1–6 stable) |
 
-**Last completed phase:** 2
-**Next phase to build:** 3 — Policy + Approval
+**Last completed phase:** 3
+**Next phase to build:** 4 — Razorpay Payment
 
 ---
 
@@ -64,17 +64,17 @@
 
 ## What To Do Next
 
-**Phase 3 — Policy + Approval:**
-1. Implement Policy Engine as pure function: `(cart, config) → PolicyResult`
-2. Budget check (cart total vs user budget)
-3. Agent spending limit check (amount vs agent auto-transact limit)
-4. Merchant trust tier check (merchant tier vs allowed tiers)
-5. Approval flow: auto-approve below threshold, human approval above
-6. Approval dialog UI component
-7. Policy result UI (pass/fail badges with reasons)
-8. Wire to transaction state machine (CART_READY → POLICY_PENDING → POLICY_FAIL/APPROVAL_REQUIRED/AUTO_APPROVED)
-9. Tests for all policy check combinations
-10. Tag `phase-3`
+### Phase 3 — Policy + Approval ✅ Complete
+See `docs/AGENT_HANDOFF.md` for full details.
+
+**Phase 4 — Razorpay Payment (Next):**
+1. Install `razorpay` npm package + add `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` to `.env`
+2. Implement `POST /api/checkout` — create Razorpay order server-side, store `razorpayOrderId` on transaction
+3. Add Razorpay Standard Checkout on the frontend (after APPROVED or AUTO_APPROVED state)
+4. Implement `POST /api/payment/verify` — verify HMAC signature server-side
+5. Implement `GET /api/payment/status` — poll Razorpay for payment status
+6. Handle `PAYMENT_SUCCESS` / `PAYMENT_FAILED` / `PAYMENT_TIMEOUT` → `VERIFIED` / `COMPLETED`
+7. Tag `phase-4`
 
 ---
 
@@ -140,5 +140,5 @@ npm run build    # Build for production
 
 ---
 
-*Last updated: Phase 2 completion*
+*Last updated: Phase 3 completion*
 *Update this file at the end of every phase.*

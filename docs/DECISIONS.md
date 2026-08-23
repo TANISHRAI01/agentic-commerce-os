@@ -66,7 +66,16 @@
 | 29 | **Retry on malformed LLM output** (2 retries) over fail-fast | Return error immediately on bad output | LLMs occasionally return malformed JSON. 2 retries with a stronger instruction catches most transient issues. If all retries fail, a clear error is returned. |
 | 30 | **Separate `ParsedIntentSchema` and `RankingResultSchema`** over reusing existing schemas | Extend ShoppingIntentSchema for LLM output | LLM output shape differs from internal schemas (e.g., `maximumPrice` vs `maxBudget`, `ambiguityQuestions`). Separate schemas keep the LLM interface decoupled from internal types. |
 
+## Phase 3 Decisions (Policy + Approval)
+
+| # | Decision | Alternative Considered | Rationale |
+|---|----------|----------------------|-----------|
+| 31 | **Pure Function Policy Engine** over database-coupled logic | Pass DB connection to policy engine | A pure function `(input) → result` is easier to test, completely predictable, and has zero side effects. The caller is responsible for fetching the necessary data from the DB. |
+| 32 | **Database-sourced pricing** over frontend-provided pricing | Trust price sent from frontend in `/api/policy` request | Security: Frontend cannot be trusted to provide accurate pricing. The backend must read the canonical price from the SQLite database to prevent price manipulation attacks. |
+| 33 | **Triple Verification in `/api/approve`** over simple state transition | Trust the decision without re-verifying state | Security: Even if an authenticated user calls `/api/approve`, the backend must independently verify the transaction exists, is exactly in `APPROVAL_REQUIRED` state, and the policy checks actually passed. |
+| 34 | **Inline Policy Execution** in `/api/shop` over separate API call | Make frontend call `/api/policy` after `/api/shop` | Better UX and lower latency. The policy result is immediately available in the same response as the product recommendation, allowing the UI to instantly show if the purchase is blocked, auto-approved, or needs human approval. |
+| 35 | **Granular Audit Events** over single "Policy Checked" event | One event for policy + approval | Writing separate `POLICY_CHECK`, `POLICY_EVALUATED`, `APPROVAL_REQUESTED`, `APPROVAL_GRANTED`/`REJECTED` events creates a detailed, unambiguous timeline for auditability. |
+
 ---
 
 *This document is updated at the end of every phase.*
-

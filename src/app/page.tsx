@@ -114,7 +114,7 @@ export default function Home() {
         </div>
         <div className="header-status">
           <span className="status-dot" />
-          <span>Phase 2 — AI Buyer Active</span>
+          <span>Phase 3 — Policy Active</span>
         </div>
       </header>
 

@@ -2,7 +2,7 @@
 
 > **What exists, what was decided, what remains, assumptions, and risks.**
 >
-> Updated at: Phase 2 completion.
+> Updated at: Phase 3 completion.
 
 ---
 
@@ -17,27 +17,28 @@
 - **Transaction state machine** with 17 states and validated transitions
 - **Transaction service** with CRUD + state machine + auto-audit
 - **Audit system** with append-only events, retrieval, and timeline builder
-- **LLM Service** (`src/services/llm.ts`) — Gemini abstraction with structured output, JSON extraction, Zod validation, retry logic
-- **Discovery Agent** (`src/agents/discovery.ts`) — Natural language → structured intent (ParsedIntentSchema)
-- **Decision Agent** (`src/agents/decision.ts`) — Product ranking with explainability, hallucination prevention
-- **10 API routes** — intent, discover, decide, shop (unified pipeline), policy, approve, checkout, payment/verify, payment/status, audit
-- **Conversational UI** — Chat interface with product cards, ranking explanation, loading/error states
-- **153 passing tests** across 8 test suites
+- **LLM Service** — Gemini abstraction with structured output, JSON extraction, Zod validation, retry logic
+- **Discovery Agent** — Natural language → structured intent (ParsedIntentSchema)
+- **Decision Agent** — Product ranking with explainability, hallucination prevention (double safety net)
+- **Policy Engine** (`src/engine/policy-engine.ts`) — Pure deterministic function, 4 checks, approval threshold
+- **10 API routes** — all implemented (policy and approve fully functional; checkout/payment/verify are stubs for Phase 4)
+- **PolicyPanel UI** — PASS/FAIL badge per check, approval waiting/granted/rejected states
+- **ApprovalDialog UI** — Product summary + policy results + Approve/Reject buttons
+- **Conversational UI** — Chat interface with product cards, ranking explanation, policy panel
+- **191 passing tests** across 9 test suites
 
 ### What Does NOT Exist Yet
 
-- Policy Engine implementation
-- Approval flow
 - Razorpay payment integration
 - Payment failure/timeout handling
-- Idempotency manager
+- Idempotency manager (Phase 5)
 - Metrics tracking
 - Demo mode (seeded/deterministic responses)
 - Premium UI polish (advanced animations)
 
 ---
 
-## Key Decisions Made (Phase 0 + 1 + 2)
+## Key Decisions Made (Phase 0 + 1 + 2 + 3)
 
 | Decision | Rationale |
 |----------|-----------|
@@ -45,7 +46,7 @@
 | **Zod** for schema validation | Runtime validation catches bad data before it hits the DB. Type inference from schemas eliminates type duplication |
 | **60 products, 6 merchants** | Enough variety for realistic demo (8 categories), not so many that seed is slow |
 | **Seed script** runs on demand | Database is created on first API request; seed is separate to keep startup fast |
-| **Unified `/api/shop` endpoint** | Single call orchestrates intent → search → rank. Simpler frontend code, fewer network round-trips. Individual endpoints (intent, discover, decide) still available for testing |
+| **Unified `/api/shop` endpoint** | Single call orchestrates intent → search → rank → **policy**. Simpler frontend code, fewer network round-trips |
 | **Candidate-only ranking** | LLM only sees filtered catalog results, never the full catalog. Prevents hallucination of products outside the search results |
 | **Post-validation of product IDs** | After LLM returns a ranking, we verify every product ID exists in the candidate list AND in the database. Double safety net |
 | **Mocked LLM for tests** | Tests validate schemas and logic deterministically without API calls. No GEMINI_API_KEY needed to run tests |
@@ -138,17 +139,24 @@
 - **Phase 3 Authorization:** Backend authorization logic (Policy Engine) is currently unbuilt as it belongs to Phase 3.
 
 ### Current Stable Functionality
-User types a natural-language shopping query → Discovery Agent parses it into structured intent → Catalog service searches with deterministic filters → Decision Agent ranks real products with explanations → UI displays product cards with reasons and alternatives. 153/153 tests passing.
+User types a natural-language shopping query → Discovery Agent parses it into structured intent → Catalog service searches with deterministic filters → Decision Agent ranks real products with explanations → **Policy Engine runs deterministic checks** (budget, agent limit, merchant trust, currency) → UI displays product cards with policy panel. If approval is needed, ApprovalDialog appears. If auto-approved, transaction moves to payment-ready state. 191/191 tests passing.
+
+### Phase 3 Review — Security & Architecture
+- **AI boundary maintained**: Policy Engine is a pure function with zero LLM involvement. `evaluatePolicy()` is deterministic, side-effect free, and Zod-validated.
+- **Price integrity**: `/api/shop` and `/api/policy` read `selectedProductPrice` from SQLite (DB-sourced), never from the frontend request. Frontend cannot inject a fake price.
+- **Approval bypass prevention**: `/api/approve` performs triple verification before accepting any decision: (1) transaction exists, (2) state is exactly `APPROVAL_REQUIRED`, (3) `policyResult.overall === PASS` and `requiresApproval === true`.
+- **State machine enforcement**: Cannot jump from CART_READY to PAYMENT_PENDING without passing through POLICY_PENDING → APPROVAL_REQUIRED → APPROVED.
+- **Audit trail**: Every policy check and approval decision writes an audit event with full metadata.
 
 ### Recommended Next Phase
-Proceed to **Phase 3 — Policy + Approval** (deterministic policy engine, approval flow, UI).
+Proceed to **Phase 4 — Razorpay Payment** (order creation, checkout, HMAC verification, polling).
 
 ---
 
 ## Handoff Instructions
 
 1. Read `CONTEXT.md` first
-2. `npm install` → `npm test` (should show 153 passing)
+2. `npm install` → `npm test` (should show **191 passing**)
 3. `npm run seed` → creates `data/commerce.db`
 4. Set `GEMINI_API_KEY` in `.env` (required for live AI features)
 5. `npm run dev` → opens http://localhost:3000
