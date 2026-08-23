@@ -141,12 +141,13 @@
 ### Current Stable Functionality
 User types a natural-language shopping query → Discovery Agent parses it into structured intent → Catalog service searches with deterministic filters → Decision Agent ranks real products with explanations → **Policy Engine runs deterministic checks** (budget, agent limit, merchant trust, currency) → UI displays product cards with policy panel. If approval is needed, ApprovalDialog appears. If auto-approved, transaction moves to payment-ready state. 191/191 tests passing.
 
-### Phase 3 Review — Security & Architecture
+### Phase 3 Review — Security & Architecture (Conducted post-Phase 3)
+- **What was reviewed**: Phase 3 implementation, specifically `Policy Engine`, `/api/policy`, `/api/approve`, `state-machine.ts`, and test coverage.
+- **Issues found**: None. The implementation correctly adheres to the architecture. Input validation is present, prices are securely fetched from the backend SQLite DB (preventing frontend price spoofing), and state transitions are strictly enforced.
+- **Fixes made**: None required.
+- **Remaining risks**: Duplicate payments and idempotency are not yet handled. This is expected, as payment logic and failure handling are scoped for Phase 4 and Phase 5 respectively.
 - **AI boundary maintained**: Policy Engine is a pure function with zero LLM involvement. `evaluatePolicy()` is deterministic, side-effect free, and Zod-validated.
-- **Price integrity**: `/api/shop` and `/api/policy` read `selectedProductPrice` from SQLite (DB-sourced), never from the frontend request. Frontend cannot inject a fake price.
 - **Approval bypass prevention**: `/api/approve` performs triple verification before accepting any decision: (1) transaction exists, (2) state is exactly `APPROVAL_REQUIRED`, (3) `policyResult.overall === PASS` and `requiresApproval === true`.
-- **State machine enforcement**: Cannot jump from CART_READY to PAYMENT_PENDING without passing through POLICY_PENDING → APPROVAL_REQUIRED → APPROVED.
-- **Audit trail**: Every policy check and approval decision writes an audit event with full metadata.
 
 ### Recommended Next Phase
 Proceed to **Phase 4 — Razorpay Payment** (order creation, checkout, HMAC verification, polling).
