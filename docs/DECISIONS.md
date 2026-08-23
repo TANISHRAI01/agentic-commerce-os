@@ -84,6 +84,16 @@
 | 37 | **Timing-Safe Signature Verification** | Use standard string equality (`===`) | Security. `crypto.timingSafeEqual` prevents timing attacks when comparing the HMAC-SHA256 signature from Razorpay. |
 | 38 | **State-Aware Idempotency** | Simply return the existing order if `razorpayOrderId` is set | Prevent double checkouts on paid orders. If a transaction is in a terminal state (like `COMPLETED`), returning the existing order could allow the frontend to retry checkout. The API now throws a 409 Conflict if the transaction isn't in `PAYMENT_PENDING` or an approved state. |
 
+## Phase 5 Decisions (Failure Handling)
+
+| # | Decision | Alternative Considered | Rationale |
+|---|----------|----------------------|-----------|
+| 39 | **PaymentSimulator via env var** over mocking at the test layer | Use `vi.mock` for all simulator tests | Env var mode means the simulator runs through the full real code path (route → service), not a mock bypass. This tests the actual guard and audit logic, not just the happy path. |
+| 40 | **`/api/payment/recover` owns all reconciliation** over distributing recovery logic | Let `/api/checkout` retry internally | A single endpoint makes it impossible to retry without going through explicit verification. Any bypass of this endpoint is a code audit issue, not a runtime issue. |
+| 41 | **Hard 409 block in checkout for `PAYMENT_UNKNOWN`** over soft warning | Show a warning but allow retry | A soft warning can be ignored by a buggy or malicious client. A hard 409 with `action: 'CALL_RECOVER'` forces the correct path. |
+| 42 | **`RETRY_BLOCKED` as a first-class audit event** over a server log | Log to console only | An audit event is immutable, timestamped, and queryable. A console log disappears. This makes the block visible in the IncidentTimeline for the user. |
+| 43 | **`STILL_UNKNOWN` → 503 (not 200)** when provider is unreachable | Return 200 with `reconciled: false` | 503 is the correct HTTP status when a downstream dependency is unavailable. It signals to the client to not retry immediately. |
+
 ---
 
 *This document is updated at the end of every phase.*

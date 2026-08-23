@@ -161,6 +161,18 @@ User types a natural-language shopping query → Discovery Agent parses it into 
 ### Recommended Next Phase
 Proceed to **Phase 5 — Failure Handling** (timeout simulation, verify-before-retry, idempotency keys, duplicate payment detection).
 
+### Phase 5 Review — Security & Architecture (Conducted post-Phase 5)
+- **What was reviewed**: Phase 5 implementation — `PaymentSimulator`, `/api/payment/recover`, Guard 2b in `/api/checkout`, `IncidentTimeline`, `CheckoutButton` unknown state, audit event schema additions.
+- **Issues found**: None. The verify-before-retry contract is strict — the only code path out of `PAYMENT_UNKNOWN` is through the recovery endpoint. There is no code path that allows a new payment to start from `PAYMENT_UNKNOWN`.
+- **Fixes made**: None required.
+- **AI boundary maintained**: `PaymentSimulator` is a deterministic test abstraction. No LLM involvement in any failure or recovery path.
+- **Duplicate prevention verified**: A `COMPLETED` transaction that calls `/api/payment/recover` a second time gets a 409. The audit trail shows exactly one `PAYMENT_RECONCILED` event.
+- **Production safety**: `PaymentSimulator` has a hard guard that throws if `NODE_ENV === 'production'`.
+- **Current stable functionality**: Full payment lifecycle including failure handling: happy path, timeout→success, timeout→failure, provider unreachable. 238/238 tests passing.
+
+### Recommended Next Phase
+Proceed to **Phase 6 — Audit + Premium UX** (audit timeline dashboard, metrics, demo mode, visual polish).
+
 ---
 
 ## Handoff Instructions

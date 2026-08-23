@@ -18,18 +18,18 @@
 ## Current Status
 
 | Phase | Status |
-|-------|--------|
+|----------|--------|
 | 0 — Architecture & Docs | ✅ Complete (`phase-0` tag) |
 | 1 — Foundation | ✅ Complete (`phase-1` tag) |
 | 2 — AI Buyer | ✅ Complete (`v0.2-ai-buyer` tag) |
 | 3 — Policy + Approval | ✅ Complete |
-| 4 — Razorpay Payment | ✅ Complete |
-| 5 — Failure Handling | 🔲 Not Started |
+| 4 — Razorpay Payment | ✅ Complete (`v0.4-payments` tag) |
+| 5 — Failure Handling | ✅ Complete |
 | 6 — Audit + Premium UX | 🔲 Not Started |
 | 7–9 — Stretch | 🔲 Not Started (only after 1–6 stable) |
 
-**Last completed phase:** 4
-**Next phase to build:** 5 — Failure Handling
+**Last completed phase:** 5
+**Next phase to build:** 6 — Audit + Premium UX
 
 ---
 
@@ -74,13 +74,21 @@ See `docs/AGENT_HANDOFF.md` for full details.
 - **Security**: All 8 guards enforced before any Razorpay call. Price always from DB. Signature verified server-side. Idempotency prevents duplicate orders. LLM never touches payment.
 - **Tests**: 31 new tests (HMAC verification, security guards, config validation, state machine flow). Total: 222 tests passing.
 
-**Phase 5 — Failure Handling (Next):**
-1. Payment timeout simulation
-2. PENDING_VERIFICATION state with safe polling
-3. Idempotency key system (prevent duplicate orders)
-4. Duplicate payment detection
-5. Safe retry logic (verify-before-retry)
-6. UI: pending state, safe recovery messaging
+### Phase 5 — Failure Handling ✅ Complete
+- **PaymentSimulator** (`src/services/payment-simulator.ts`): Dev-only test abstraction with 4 named modes (`NORMAL`, `TIMEOUT_THEN_SUCCESS`, `TIMEOUT_THEN_FAILURE`, `VERIFICATION_ERROR`). Production guard throws if activated outside dev. Controlled via `PAYMENT_SIM_MODE` env var.
+- **Recovery Endpoint** (`POST /api/payment/recover`): Owns the entire verify-before-retry contract. Fetches external payment status, reconciles `PAYMENT_UNKNOWN` to `COMPLETED` or `PAYMENT_FAILED` deterministically, or leaves it `PAYMENT_UNKNOWN` if the provider is unreachable. Every branch is audited.
+- **Guard 2b** in `/api/checkout`: Hard-blocks checkout when state is `PAYMENT_UNKNOWN`. Emits `RETRY_BLOCKED` audit event. Directs client to `/api/payment/recover` first.
+- **Audit Endpoint** (`GET /api/payment/audit`): Returns the full chronological audit trail for a transaction. Used by IncidentTimeline.
+- **IncidentTimeline** (`src/app/components/IncidentTimeline.tsx`): Auto-polling visual timeline of audit events. Color-coded by result. Shows safety notice in `PAYMENT_UNKNOWN` state. Stops polling on terminal state.
+- **CheckoutButton** updated: Detects if Razorpay modal was dismissed without a handler callback while the server is still `PAYMENT_PENDING`. Transitions to `unknown` UI state with "Verify Payment Status" button — blocking silent retry.
+- **AuditEventType**: Added `RETRY_BLOCKED` and `PAYMENT_RECONCILED` to the schema.
+- **Tests**: 12 new tests in `tests/recovery.test.ts`. Total: 238 tests passing.
+
+**Phase 6 — Audit + Premium UX (Next):**
+1. Full audit timeline dashboard view
+2. Metrics dashboard
+3. Demo / seeded mode
+4. Premium UI polish and animations
 
 ---
 
@@ -139,12 +147,17 @@ See `docs/AGENT_HANDOFF.md` for full details.
 
 ```bash
 npm run dev      # Start dev server (localhost:3000)
-npm test         # Run all tests (222 passing)
+npm test         # Run all tests (238 passing)
 npm run seed     # Seed the database with 60 products
 npm run build    # Build for production
+
+# Phase 5 test scenarios (set env var before npm run dev):
+# PAYMENT_SIM_MODE=TIMEOUT_THEN_SUCCESS npm run dev
+# PAYMENT_SIM_MODE=TIMEOUT_THEN_FAILURE npm run dev
+# PAYMENT_SIM_MODE=VERIFICATION_ERROR   npm run dev
 ```
 
 ---
 
-*Last updated: Phase 4 completion*
+*Last updated: Phase 5 completion*
 *Update this file at the end of every phase.*

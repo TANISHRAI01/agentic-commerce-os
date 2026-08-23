@@ -1749,3 +1749,230 @@ body {
   color: #eab308;
   text-align: center;
 }
+
+/* ============================================================
+   Phase 5 — Incident Timeline + Recovery UI
+   ============================================================ */
+
+/* Incident Timeline Container */
+.incident-timeline {
+  margin-top: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  animation: fadeIn 0.3s ease;
+}
+
+.incident-timeline-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.incident-timeline-icon {
+  font-size: 16px;
+}
+
+.incident-timeline-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.incident-state-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.incident-state-badge.incident-state-completed { background: rgba(34, 197, 94, 0.15); color: #4ade80; border-color: rgba(34, 197, 94, 0.3); }
+.incident-state-badge.incident-state-payment-failed { background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.3); }
+.incident-state-badge.incident-state-payment-unknown { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3); }
+.incident-state-badge.incident-state-cancelled { background: rgba(107, 114, 128, 0.2); color: #9ca3af; border-color: rgba(107, 114, 128, 0.3); }
+
+.incident-timeline-loading,
+.incident-timeline-empty,
+.incident-timeline-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 8px 0;
+}
+
+.incident-timeline-error { color: var(--error); }
+
+/* Event List */
+.incident-events {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.incident-event {
+  display: flex;
+  gap: 12px;
+  min-height: 48px;
+}
+
+.incident-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 16px;
+}
+
+.incident-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.incident-line {
+  flex: 1;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 4px 0;
+}
+
+.incident-content {
+  flex: 1;
+  padding-bottom: 14px;
+}
+
+.incident-event-last .incident-content {
+  padding-bottom: 0;
+}
+
+.incident-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
+.incident-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.timeline-label-success { color: #4ade80; }
+.timeline-label-fail    { color: #f87171; }
+.timeline-label-warn    { color: #fbbf24; }
+.timeline-label-info    { color: #818cf8; }
+
+.incident-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: 'Courier New', monospace;
+  flex-shrink: 0;
+}
+
+.incident-reason {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Safety notice */
+.incident-safety-notice {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 8px;
+  font-size: 12px;
+  color: #fbbf24;
+  line-height: 1.5;
+}
+
+/* Unknown state UI */
+.checkout-unknown {
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeIn 0.3s ease;
+}
+
+.checkout-unknown-header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 20px;
+}
+
+.checkout-unknown-title {
+  font-weight: 700;
+  color: #fbbf24;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.checkout-unknown-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.checkout-unknown-error {
+  font-size: 12px;
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.07);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.checkout-recover-btn {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.checkout-recover-btn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.checkout-recover-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Recovering state */
+.checkout-recovering {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding: 16px;
+  flex-direction: column;
+}
+

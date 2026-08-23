@@ -68,6 +68,25 @@ export async function POST(request: NextRequest) {
       txn.state !== 'AUTO_APPROVED' &&
       txn.state !== 'PAYMENT_PENDING'
     ) {
+      // Special case: PAYMENT_UNKNOWN requires verification before any retry
+      if (txn.state === 'PAYMENT_UNKNOWN') {
+        createAuditEvent(db, {
+          transactionId,
+          event: 'RETRY_BLOCKED',
+          result: 'WARNING',
+          reason: 'Checkout retry blocked: payment state is PAYMENT_UNKNOWN. Verify status via /api/payment/recover before retrying.',
+          metadata: { state: txn.state, razorpayOrderId: txn.razorpayOrderId },
+        });
+        return NextResponse.json(
+          {
+            error: 'Payment is in an unknown state. Verify payment status before retrying.',
+            action: 'CALL_RECOVER',
+            details: 'Call POST /api/payment/recover to check payment status and reconcile.',
+          },
+          { status: 409 },
+        );
+      }
+
       return NextResponse.json(
         {
           error: 'Transaction is not in a payable state',
