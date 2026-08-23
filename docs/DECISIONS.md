@@ -76,6 +76,14 @@
 | 34 | **Inline Policy Execution** in `/api/shop` over separate API call | Make frontend call `/api/policy` after `/api/shop` | Better UX and lower latency. The policy result is immediately available in the same response as the product recommendation, allowing the UI to instantly show if the purchase is blocked, auto-approved, or needs human approval. |
 | 35 | **Granular Audit Events** over single "Policy Checked" event | One event for policy + approval | Writing separate `POLICY_CHECK`, `POLICY_EVALUATED`, `APPROVAL_REQUESTED`, `APPROVAL_GRANTED`/`REJECTED` events creates a detailed, unambiguous timeline for auditability. |
 
+## Phase 4 Decisions (Razorpay Payment)
+
+| # | Decision | Alternative Considered | Rationale |
+|---|----------|----------------------|-----------|
+| 36 | **Strict Server-Side Razorpay Orchestration** | Initialize Razorpay fully on the client | Security. The client is only given the public Key ID and the created Order ID. Order creation and signature verification must happen on the backend to prevent tampering. |
+| 37 | **Timing-Safe Signature Verification** | Use standard string equality (`===`) | Security. `crypto.timingSafeEqual` prevents timing attacks when comparing the HMAC-SHA256 signature from Razorpay. |
+| 38 | **State-Aware Idempotency** | Simply return the existing order if `razorpayOrderId` is set | Prevent double checkouts on paid orders. If a transaction is in a terminal state (like `COMPLETED`), returning the existing order could allow the frontend to retry checkout. The API now throws a 409 Conflict if the transaction isn't in `PAYMENT_PENDING` or an approved state. |
+
 ---
 
 *This document is updated at the end of every phase.*
