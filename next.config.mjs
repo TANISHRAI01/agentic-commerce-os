@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    serverComponentsExternalPackages: ['sql.js'],
+    serverComponentsExternalPackages: ['sql.js', 'razorpay'],
   },
 };
 

@@ -1,22 +1,195 @@
+// ============================================================
+// POST /api/checkout — Create a Razorpay order
+// Server-side only. No LLM. All guards enforced.
+// ============================================================
+
 import { NextRequest, NextResponse } from 'next/server';
+import { getDb } from '@/db/connection';
+import { getTransaction, transitionTransaction } from '@/services/transaction';
+import { getProductById } from '@/services/catalog';
+import { createAuditEvent } from '@/audit/logger';
+import {
+  createRazorpayOrder,
+  getRazorpayKeyId,
+  RazorpayConfigError,
+  RazorpayOrderError,
+} from '@/services/razorpay';
 
 /**
- * POST /api/checkout — Create a Razorpay order and prepare checkout
- * Phase 4 will implement Razorpay integration.
+ * POST /api/checkout — Create a Razorpay order for an approved transaction.
+ *
+ * SECURITY GUARDS (all 8 checked before any Razorpay call):
+ * 1. Transaction must exist
+ * 2. Transaction state must be APPROVED or AUTO_APPROVED
+ * 3. Policy must have passed
+ * 4. Product must exist in DB
+ * 5. Amount comes from DB (not from frontend)
+ * 6. Currency validated
+ * 7. Idempotency: if order already exists, return it
+ * 8. Transaction must not be in a terminal state
+ *
+ * Input: { transactionId: string }
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON body' },
+        { status: 400 },
+      );
+    }
+
+    const { transactionId } = body;
+
+    if (!transactionId || typeof transactionId !== 'string') {
+      return NextResponse.json(
+        { error: 'Missing required field: transactionId' },
+        { status: 400 },
+      );
+    }
+
+    const db = await getDb();
+
+    // ── Guard 1: Transaction must exist ──
+    const txn = getTransaction(db, transactionId);
+    if (!txn) {
+      return NextResponse.json(
+        { error: 'Transaction not found' },
+        { status: 404 },
+      );
+    }
+
+    // ── Guard 2: State must be valid for checkout ──
+    if (
+      txn.state !== 'APPROVED' &&
+      txn.state !== 'AUTO_APPROVED' &&
+      txn.state !== 'PAYMENT_PENDING'
+    ) {
+      return NextResponse.json(
+        {
+          error: 'Transaction is not in a payable state',
+          details: `State is "${txn.state}"`,
+        },
+        { status: 409 },
+      );
+    }
+
+    // ── Guard 7: Idempotency — if order already exists, return it ──
+    if (txn.razorpayOrderId) {
+      createAuditEvent(db, {
+        transactionId,
+        event: 'DUPLICATE_PREVENTED',
+        result: 'WARNING',
+        reason: `Duplicate checkout attempt. Existing order: ${txn.razorpayOrderId}`,
+        metadata: { existingOrderId: txn.razorpayOrderId },
+      });
+
+      return NextResponse.json({
+        success: true,
+        transactionId,
+        razorpayOrderId: txn.razorpayOrderId,
+        razorpayKeyId: getRazorpayKeyId(),
+        amount: (txn.selectedProductPrice ?? 0) * 100,  // paise
+        currency: 'INR',
+        productName: txn.selectedProductName,
+        duplicate: true,
+      });
+    }
+
+    // ── Guard 3: Policy must have passed ──
+    if (!txn.policyResult || txn.policyResult.overall !== 'PASS') {
+      return NextResponse.json(
+        { error: 'Policy checks have not passed for this transaction' },
+        { status: 403 },
+      );
+    }
+
+    // ── Guard 4 & 5: Product must exist, price from DB ──
+    if (!txn.selectedProductId) {
+      return NextResponse.json(
+        { error: 'No product selected for this transaction' },
+        { status: 400 },
+      );
+    }
+
+    const product = getProductById(db, txn.selectedProductId);
+    if (!product) {
+      return NextResponse.json(
+        { error: 'Selected product not found in catalog' },
+        { status: 404 },
+      );
+    }
+
+    // Use the DB price, NOT any frontend-supplied price
+    const priceInRupees = product.price;
+    const amountInPaise = Math.round(priceInRupees * 100);
+
+    // ── Guard 6: Currency check ──
+    if (product.currency !== 'INR') {
+      return NextResponse.json(
+        { error: `Unsupported currency: ${product.currency}. Only INR is supported.` },
+        { status: 400 },
+      );
+    }
+
+    // ── Create Razorpay order ──
+    const order = await createRazorpayOrder(amountInPaise, 'INR', transactionId);
+
+    // ── Transition state ──
+    transitionTransaction(db, transactionId, 'PAYMENT_PENDING', {
+      razorpayOrderId: order.orderId,
+    });
+
+    // ── Audit ──
+    createAuditEvent(db, {
+      transactionId,
+      event: 'ORDER_CREATED',
+      result: 'SUCCESS',
+      reason: `Razorpay order created: ${order.orderId} for ₹${priceInRupees}`,
+      metadata: {
+        razorpayOrderId: order.orderId,
+        amountInPaise,
+        currency: 'INR',
+        productId: product.id,
+        productName: product.name,
+        productPrice: priceInRupees,
+      },
+    });
 
     return NextResponse.json({
       success: true,
-      message: 'Checkout will be implemented in Phase 4',
-      stub: true,
+      transactionId,
+      razorpayOrderId: order.orderId,
+      razorpayKeyId: getRazorpayKeyId(),
+      amount: amountInPaise,
+      currency: 'INR',
+      productName: product.name,
+      productPrice: priceInRupees,
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof RazorpayConfigError) {
+      console.error('Razorpay config error:', error.message);
+      return NextResponse.json(
+        { error: 'Payment service not configured', details: error.message },
+        { status: 503 },
+      );
+    }
+
+    if (error instanceof RazorpayOrderError) {
+      console.error('Razorpay order error:', error.message);
+      return NextResponse.json(
+        { error: 'Failed to create payment order', details: error.message },
+        { status: 502 },
+      );
+    }
+
+    console.error('Checkout error:', error);
     return NextResponse.json(
-      { error: 'Invalid request body' },
-      { status: 400 },
+      { error: 'Internal server error' },
+      { status: 500 },
     );
   }
 }

@@ -25,7 +25,7 @@
 - **PolicyPanel UI** — PASS/FAIL badge per check, approval waiting/granted/rejected states
 - **ApprovalDialog UI** — Product summary + policy results + Approve/Reject buttons
 - **Conversational UI** — Chat interface with product cards, ranking explanation, policy panel
-- **191 passing tests** across 9 test suites
+- **222 passing tests** across 10 test suites
 
 ### What Does NOT Exist Yet
 
@@ -90,7 +90,7 @@
 2. **Gemini free tier** is sufficient for development
 3. **Single user** — no auth, no multi-tenancy
 4. **Catalog is static** — products don't change during a demo session
-5. **Tests run fast** — 153 tests in ~1 second
+5. **Tests run fast** — 222 tests in ~1.5 seconds
 6. **LLM output is always JSON** — gemini-1.5-flash reliably produces structured output with low temperature
 
 ---
@@ -149,15 +149,24 @@ User types a natural-language shopping query → Discovery Agent parses it into 
 - **AI boundary maintained**: Policy Engine is a pure function with zero LLM involvement. `evaluatePolicy()` is deterministic, side-effect free, and Zod-validated.
 - **Approval bypass prevention**: `/api/approve` performs triple verification before accepting any decision: (1) transaction exists, (2) state is exactly `APPROVAL_REQUIRED`, (3) `policyResult.overall === PASS` and `requiresApproval === true`.
 
+### Phase 4 Review — Security & Architecture (Conducted post-Phase 4)
+- **What was reviewed**: Phase 4 implementation, specifically `Razorpay Service`, `/api/checkout`, `/api/payment/verify`, state transitions, and test coverage.
+- **Issues found**: In `/api/checkout`, the idempotency check (Guard 7) returned an existing order ID without first verifying if the transaction had already moved to a terminal or paid state (e.g., `COMPLETED`). This could potentially allow the frontend to retry checkout for an already paid order.
+- **Fixes made**: Added a state validation check (Guard 2) before the idempotency return to ensure `txn.state` is either `APPROVED`, `AUTO_APPROVED`, or `PAYMENT_PENDING`. If the state is terminal, it correctly returns a 409 error, preventing duplicate checkout attempts.
+- **Remaining risks**: Failure recovery, timeout simulation, and duplicate webhook/polling collisions are not yet fully managed. Scoped for Phase 5.
+- **AI boundary maintained**: Razorpay integration is 100% server-side and deterministic. LLMs have zero ability to trigger payment functions.
+- **Security verified**: Pricing is strictly sourced from the backend database during checkout. Payment signatures are verified using `crypto.timingSafeEqual` with HMAC-SHA256 to prevent timing attacks and tampering.
+- **Current stable functionality**: End-to-end Razorpay Test Mode integration is active. 222/222 tests passing.
+
 ### Recommended Next Phase
-Proceed to **Phase 4 — Razorpay Payment** (order creation, checkout, HMAC verification, polling).
+Proceed to **Phase 5 — Failure Handling** (timeout simulation, verify-before-retry, idempotency keys, duplicate payment detection).
 
 ---
 
 ## Handoff Instructions
 
 1. Read `CONTEXT.md` first
-2. `npm install` → `npm test` (should show **191 passing**)
+2. `npm install` → `npm test` (should show **222 passing**)
 3. `npm run seed` → creates `data/commerce.db`
 4. Set `GEMINI_API_KEY` in `.env` (required for live AI features)
 5. `npm run dev` → opens http://localhost:3000

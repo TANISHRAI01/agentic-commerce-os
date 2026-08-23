@@ -23,13 +23,13 @@
 | 1 — Foundation | ✅ Complete (`phase-1` tag) |
 | 2 — AI Buyer | ✅ Complete (`v0.2-ai-buyer` tag) |
 | 3 — Policy + Approval | ✅ Complete |
-| 4 — Razorpay Payment | 🔲 Not Started |
+| 4 — Razorpay Payment | ✅ Complete |
 | 5 — Failure Handling | 🔲 Not Started |
 | 6 — Audit + Premium UX | 🔲 Not Started |
 | 7–9 — Stretch | 🔲 Not Started (only after 1–6 stable) |
 
-**Last completed phase:** 3
-**Next phase to build:** 4 — Razorpay Payment
+**Last completed phase:** 4
+**Next phase to build:** 5 — Failure Handling
 
 ---
 
@@ -67,14 +67,20 @@
 ### Phase 3 — Policy + Approval ✅ Complete
 See `docs/AGENT_HANDOFF.md` for full details.
 
-**Phase 4 — Razorpay Payment (Next):**
-1. Install `razorpay` npm package + add `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` to `.env`
-2. Implement `POST /api/checkout` — create Razorpay order server-side, store `razorpayOrderId` on transaction
-3. Add Razorpay Standard Checkout on the frontend (after APPROVED or AUTO_APPROVED state)
-4. Implement `POST /api/payment/verify` — verify HMAC signature server-side
-5. Implement `GET /api/payment/status` — poll Razorpay for payment status
-6. Handle `PAYMENT_SUCCESS` / `PAYMENT_FAILED` / `PAYMENT_TIMEOUT` → `VERIFIED` / `COMPLETED`
-7. Tag `phase-4`
+### Phase 4 — Razorpay Payment ✅ Complete
+- **Razorpay Service** (`src/services/razorpay.ts`): Server-side only. Order creation via `razorpay.orders.create()`, HMAC-SHA256 signature verification using `crypto.timingSafeEqual()`, order status polling. No LLM involvement.
+- **API Routes**: `POST /api/checkout` (8-point security guard, idempotency, DB-sourced pricing), `POST /api/payment/verify` (HMAC verification, state guards, order ID matching), `GET /api/payment/status` (transaction state polling)
+- **UI Components**: `CheckoutButton.tsx` (order summary, Razorpay Standard Checkout modal, verify callback), `PaymentReceipt.tsx` (verified payment details, test mode notice)
+- **Security**: All 8 guards enforced before any Razorpay call. Price always from DB. Signature verified server-side. Idempotency prevents duplicate orders. LLM never touches payment.
+- **Tests**: 31 new tests (HMAC verification, security guards, config validation, state machine flow). Total: 222 tests passing.
+
+**Phase 5 — Failure Handling (Next):**
+1. Payment timeout simulation
+2. PENDING_VERIFICATION state with safe polling
+3. Idempotency key system (prevent duplicate orders)
+4. Duplicate payment detection
+5. Safe retry logic (verify-before-retry)
+6. UI: pending state, safe recovery messaging
 
 ---
 
@@ -133,12 +139,12 @@ See `docs/AGENT_HANDOFF.md` for full details.
 
 ```bash
 npm run dev      # Start dev server (localhost:3000)
-npm test         # Run all tests (153 passing)
+npm test         # Run all tests (222 passing)
 npm run seed     # Seed the database with 60 products
 npm run build    # Build for production
 ```
 
 ---
 
-*Last updated: Phase 3 completion*
+*Last updated: Phase 4 completion*
 *Update this file at the end of every phase.*

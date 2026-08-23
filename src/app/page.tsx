@@ -114,7 +114,7 @@ export default function Home() {
         </div>
         <div className="header-status">
           <span className="status-dot" />
-          <span>Phase 3 — Policy Active</span>
+          <span>Phase 4 — Razorpay Payment Active</span>
         </div>
       </header>
 

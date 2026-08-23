@@ -5,6 +5,8 @@ import ProductCard from './ProductCard';
 import RankingExplanation from './RankingExplanation';
 import PolicyPanel from './PolicyPanel';
 import ApprovalDialog from './ApprovalDialog';
+import CheckoutButton from './CheckoutButton';
+import PaymentReceipt from './PaymentReceipt';
 
 interface PolicyCheck {
   name: string;
@@ -95,9 +97,28 @@ interface ChatMessageProps {
 
 export default function ChatMessage({ type, content, timestamp, shopResult }: ChatMessageProps) {
   const [transactionState, setTransactionState] = useState(shopResult?.transactionState ?? '');
+  const [paymentResult, setPaymentResult] = useState<{
+    razorpayPaymentId?: string;
+    razorpayOrderId?: string;
+  } | null>(null);
 
   const handleApprovalDecision = (decision: 'APPROVED' | 'REJECTED') => {
     setTransactionState(decision === 'APPROVED' ? 'APPROVED' : 'BLOCKED');
+  };
+
+  const handlePaymentComplete = (result: {
+    success: boolean;
+    transactionState: string;
+    razorpayPaymentId?: string;
+    razorpayOrderId?: string;
+  }) => {
+    setTransactionState(result.transactionState);
+    if (result.success) {
+      setPaymentResult({
+        razorpayPaymentId: result.razorpayPaymentId,
+        razorpayOrderId: result.razorpayOrderId,
+      });
+    }
   };
 
   if (type === 'user') {
@@ -126,6 +147,9 @@ export default function ChatMessage({ type, content, timestamp, shopResult }: Ch
 
   const currentState = transactionState || shopResult?.transactionState || '';
   const isBlocked = currentState === 'BLOCKED';
+  const isPayable = currentState === 'APPROVED' || currentState === 'AUTO_APPROVED';
+  const isCompleted = currentState === 'COMPLETED';
+  const isPaymentFailed = currentState === 'PAYMENT_FAILED';
 
   // AI message
   return (
@@ -219,13 +243,40 @@ export default function ChatMessage({ type, content, timestamp, shopResult }: Ch
           />
         )}
 
-        {/* Authorization Granted banner */}
-        {currentState === 'APPROVED' && (
-          <div className="authorization-granted">
-            <span className="authorization-icon">✅</span>
+        {/* Checkout Button — when approved and ready for payment */}
+        {isPayable &&
+          shopResult?.transactionId &&
+          shopResult?.selectedProduct && (
+          <CheckoutButton
+            transactionId={shopResult.transactionId}
+            productName={shopResult.selectedProduct.name}
+            productPrice={shopResult.selectedProduct.price}
+            merchantTrustTier={shopResult.selectedProduct.merchantTrustTier}
+            onPaymentComplete={handlePaymentComplete}
+          />
+        )}
+
+        {/* Payment Receipt — after successful payment */}
+        {isCompleted &&
+          shopResult?.transactionId &&
+          shopResult?.selectedProduct &&
+          paymentResult && (
+          <PaymentReceipt
+            transactionId={shopResult.transactionId}
+            productName={shopResult.selectedProduct.name}
+            productPrice={shopResult.selectedProduct.price}
+            razorpayPaymentId={paymentResult.razorpayPaymentId || ''}
+            razorpayOrderId={paymentResult.razorpayOrderId || ''}
+          />
+        )}
+
+        {/* Payment Failed banner */}
+        {isPaymentFailed && (
+          <div className="authorization-blocked">
+            <span>❌</span>
             <div>
-              <div className="authorization-title">Authorization Granted</div>
-              <div className="authorization-subtitle">Payment processing will be available in Phase 4</div>
+              <div className="authorization-title">Payment Failed</div>
+              <div className="authorization-subtitle">The payment could not be verified. Please try again.</div>
             </div>
           </div>
         )}

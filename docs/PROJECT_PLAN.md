@@ -14,7 +14,7 @@
 | 1 | Foundation | ✅ Complete | `phase-1` | 100 tests passing, 60 products, 6 merchants, state machine, audit system |
 | 2 | AI Buyer | ✅ Complete | `phase-2` | Discovery + Decision agents, Gemini LLM, 153 tests passing |
 | 3 | Policy + Approval | ✅ Complete | `phase-3` | Deterministic policy engine, approval flow |
-| 4 | Razorpay Payment | 🔲 Not Started | — | Test-mode integration, order creation, polling |
+| 4 | Razorpay Payment | ✅ Complete | `phase-4` | Server-side Razorpay, HMAC verification, 222 tests passing |
 | 5 | Failure Handling | 🔲 Not Started | — | Timeout, safe recovery, idempotency |
 | 6 | Audit + Premium UX | 🔲 Not Started | — | Audit timeline, metrics, demo mode, polish |
 | 7 | AI-readable Catalog | 🔲 Stretch | — | Structured catalog intelligence |
@@ -98,21 +98,21 @@
 
 ---
 
-### Phase 4 — Razorpay Payment
+### Phase 4 — Razorpay Payment ✅
 
 **Goal:** End-to-end Razorpay test-mode payment flow.
 
 **Deliverables:**
-- [ ] Razorpay SDK integration (test mode only)
-- [ ] Order creation API
-- [ ] Razorpay Standard Checkout (frontend)
-- [ ] Payment status polling (not webhooks)
-- [ ] Payment verification (server-side signature check)
-- [ ] Transaction state: ORDER_CREATED → PAYMENT_INITIATED → VERIFIED
-- [ ] Tests: order creation, payment verification
-- [ ] `phase-4` tag
+- [x] Razorpay SDK integration (test mode only)
+- [x] Order creation API (`POST /api/checkout` with 8 security guards)
+- [x] Razorpay Standard Checkout (frontend `CheckoutButton.tsx`)
+- [x] Payment status polling (`GET /api/payment/status`)
+- [x] Payment verification (server-side HMAC-SHA256, `POST /api/payment/verify`)
+- [x] Transaction state: APPROVED → PAYMENT_PENDING → PAYMENT_SUCCESS → VERIFIED → COMPLETED
+- [x] Tests: 31 new tests (HMAC verification, security guards, state flow)
+- [x] `phase-4` tag
 
-**Definition of Done:** Full payment flow works with Razorpay test credentials. Money does not move.
+**Definition of Done:** ✅ Full payment flow works with Razorpay test credentials. Money does not move.
 
 ---
 
@@ -164,4 +164,4 @@
 
 ## What's Next
 
-**Immediate:** Begin Phase 4 — Razorpay Payment (test-mode integration, order creation, checkout, status polling).
+**Immediate:** Begin Phase 5 — Failure Handling (timeout, safe recovery, idempotency, verify-before-retry).
