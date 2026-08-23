@@ -162,16 +162,16 @@ User types a natural-language shopping query → Discovery Agent parses it into 
 Proceed to **Phase 5 — Failure Handling** (timeout simulation, verify-before-retry, idempotency keys, duplicate payment detection).
 
 ### Phase 5 Review — Security & Architecture (Conducted post-Phase 5)
-- **What was reviewed**: Phase 5 implementation — `PaymentSimulator`, `/api/payment/recover`, Guard 2b in `/api/checkout`, `IncidentTimeline`, `CheckoutButton` unknown state, audit event schema additions.
-- **Issues found**: None. The verify-before-retry contract is strict — the only code path out of `PAYMENT_UNKNOWN` is through the recovery endpoint. There is no code path that allows a new payment to start from `PAYMENT_UNKNOWN`.
-- **Fixes made**: None required.
-- **AI boundary maintained**: `PaymentSimulator` is a deterministic test abstraction. No LLM involvement in any failure or recovery path.
-- **Duplicate prevention verified**: A `COMPLETED` transaction that calls `/api/payment/recover` a second time gets a 409. The audit trail shows exactly one `PAYMENT_RECONCILED` event.
-- **Production safety**: `PaymentSimulator` has a hard guard that throws if `NODE_ENV === 'production'`.
-- **Current stable functionality**: Full payment lifecycle including failure handling: happy path, timeout→success, timeout→failure, provider unreachable. 238/238 tests passing.
 
-### Recommended Next Phase
-Proceed to **Phase 6 — Audit + Premium UX** (audit timeline dashboard, metrics, demo mode, visual polish).
+* **What was reviewed**: The full Phase 5 failure recovery implementation. This includes `PaymentSimulator` (`src/services/payment-simulator.ts`), the verify-before-retry contract in `POST /api/payment/recover`, Guard 2b in `/api/checkout`, `IncidentTimeline.tsx`, `CheckoutButton.tsx` (unknown state handling), and audit event schemas.
+* **Issues found**: None. The verify-before-retry architecture is highly restrictive by design.
+* **Fixes made**: None required during review. 
+* **Remaining risks**: None blocking Phase 6. The UI correctly handles timeout scenarios and duplicate webhooks/callbacks are mitigated by idempotency keys and state checks.
+* **Current stable functionality**: Full end-to-end payment lifecycle including failure handling. The system handles happy paths, simulated timeouts recovering to SUCCESS, simulated timeouts recovering to FAILURE, and provider network failures. 238/238 tests passing.
+* **Recommended next phase**: Proceed to **Phase 6 — Audit + Premium UX** (audit timeline dashboard, metrics, demo mode, visual polish).
+
+**Concise Engineering Review:**
+The Phase 5 implementation accurately matches the intended architecture. There are no security vulnerabilities found; the frontend cannot bypass backend authorization because `/api/checkout` strictly blocks retries (409 Conflict) when a transaction is in `PAYMENT_UNKNOWN` state. The LLM cannot trigger money movement; it is strictly a deterministic state machine flow. Duplicate payments are prevented via state enforcement and idempotency keys. All external inputs are Zod-validated, errors are caught and logged, and audit events accurately reflect the incident timeline. The test suite is meaningful (testing all 9 deterministic recovery branches via a clean abstraction, `PaymentSimulator`), and no dead abstractions exist. The code remains highly maintainable.
 
 ---
 
