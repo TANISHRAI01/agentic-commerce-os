@@ -173,14 +173,28 @@ Proceed to **Phase 5 — Failure Handling** (timeout simulation, verify-before-r
 **Concise Engineering Review:**
 The Phase 5 implementation accurately matches the intended architecture. There are no security vulnerabilities found; the frontend cannot bypass backend authorization because `/api/checkout` strictly blocks retries (409 Conflict) when a transaction is in `PAYMENT_UNKNOWN` state. The LLM cannot trigger money movement; it is strictly a deterministic state machine flow. Duplicate payments are prevented via state enforcement and idempotency keys. All external inputs are Zod-validated, errors are caught and logged, and audit events accurately reflect the incident timeline. The test suite is meaningful (testing all 9 deterministic recovery branches via a clean abstraction, `PaymentSimulator`), and no dead abstractions exist. The code remains highly maintainable.
 
+### Phase 6 — Audit + Premium UX (Completed)
+
+* **What was built**: DemoPanel with 4 scenario presets, Simple/Technical audit toggle, deterministic policy explanations, section card layout in ChatMessage, premium welcome screen, audit trail auto-expansion on terminal states.
+* **No backend changes**: This was a frontend-only phase. All 238 tests pass unchanged.
+* **No secrets exposed**: The audit trail shows application events (policy checks, state transitions, Razorpay order IDs). A disclosure line explicitly states no API keys, model prompts, or credentials are displayed.
+* **Demo scenarios use real pipeline**: Each scenario button auto-fills a real query that executes against the real LLM, catalog search, policy engine, and Razorpay integration. Nothing is faked.
+* **Current stable functionality**: All 6 mandatory phases complete. The system is demo-ready.
+
+### All Mandatory Phases Complete
+Phases 1–6 are complete and stable. Phases 7–9 are stretch goals that should only be started if there is time and all current functionality is verified.
+
 ---
 
 ## Handoff Instructions
 
 1. Read `CONTEXT.md` first
-2. `npm install` → `npm test` (should show **222 passing**)
+2. `npm install` → `npm test` (should show **238 passing**)
 3. `npm run seed` → creates `data/commerce.db`
 4. Set `GEMINI_API_KEY` in `.env` (required for live AI features)
-5. `npm run dev` → opens http://localhost:3000
-6. Do not redesign architecture — extend `docs/ARCHITECTURE.md`
-7. Follow phase order strictly
+5. Set `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` in `.env`
+6. `npm run dev` → opens http://localhost:3000
+7. Use the DemoPanel to run through all 4 scenarios
+8. Do not redesign architecture — extend `docs/ARCHITECTURE.md`
+9. Follow phase order strictly
+

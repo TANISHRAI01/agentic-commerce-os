@@ -94,6 +94,17 @@
 | 42 | **`RETRY_BLOCKED` as a first-class audit event** over a server log | Log to console only | An audit event is immutable, timestamped, and queryable. A console log disappears. This makes the block visible in the IncidentTimeline for the user. |
 | 43 | **`STILL_UNKNOWN` → 503 (not 200)** when provider is unreachable | Return 200 with `reconciled: false` | 503 is the correct HTTP status when a downstream dependency is unavailable. It signals to the client to not retry immediately. |
 
+## Phase 6 Decisions (Audit + Premium UX)
+
+| # | Decision | Alternative Considered | Rationale |
+|---|----------|----------------------|-----------|
+| 44 | **Deterministic simple explanations** from policy data, not LLM-generated | Use the LLM to generate human-readable explanations | LLM output is non-deterministic and could hallucinate reasons. String templates from policy check data are 100% accurate and instant. |
+| 45 | **Demo scenarios use real queries against real pipeline** | Create a mock/seeded API that returns canned responses | Real queries prove the system actually works end-to-end. Canned responses prove nothing. |
+| 46 | **Audit trail disclosure line** ("No API keys or model prompts displayed") | Assume the user trusts the UI | Explicit disclosure prevents confusion. The user should know what they're seeing is application events, not LLM chain-of-thought. |
+| 47 | **Section cards** (Intent, Recommendation, Policy, Payment, Audit) in ChatMessage | Flat linear layout with dividers | Cards create visual hierarchy. A judge scanning the screen immediately sees 5 labeled phases of the transaction. |
+| 48 | **Audit trail auto-expands on terminal states** | Always show or always hide | Auto-expand on terminal states means the judge sees the full audit trail after a completed purchase without clicking anything. During the flow, a toggle button avoids clutter. |
+
 ---
 
 *This document is updated at the end of every phase.*
+

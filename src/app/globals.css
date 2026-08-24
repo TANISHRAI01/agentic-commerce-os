@@ -1976,3 +1976,366 @@ body {
   flex-direction: column;
 }
 
+/* ============================================================
+   Phase 6 — Auditable AI Commerce UX
+   ============================================================ */
+
+/* ── Header Badges ─────────────────────────────────────────── */
+
+.header-badges {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-phase-badge {
+  background: var(--accent-gradient);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+  letter-spacing: 0.03em;
+}
+
+/* ── Demo Panel ────────────────────────────────────────────── */
+
+.demo-panel {
+  margin: 0 auto;
+  max-width: 900px;
+  width: 100%;
+  padding: 0 16px;
+}
+
+.demo-panel-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+  border-radius: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  color: #fbbf24;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.demo-panel-toggle:hover {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.demo-panel-toggle-icon {
+  font-size: 16px;
+}
+
+.demo-panel-toggle-title {
+  flex: 1;
+  text-align: left;
+}
+
+.demo-panel-toggle-chevron {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.demo-panel-body {
+  padding: 12px 0 4px;
+  animation: fadeIn 0.2s ease;
+}
+
+.demo-scenarios-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .demo-scenarios-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.demo-scenario-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.1s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.demo-scenario-card:hover:not(:disabled) {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.demo-scenario-card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.demo-scenario-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.demo-scenario-icon {
+  font-size: 16px;
+}
+
+.demo-scenario-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.demo-scenario-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.demo-scenario-outcome {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 6px;
+  width: fit-content;
+}
+
+.demo-outcome-success {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+}
+
+.demo-outcome-blocked {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+}
+
+.demo-outcome-approval {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+}
+
+.demo-outcome-warning {
+  background: rgba(99, 102, 241, 0.12);
+  color: #a5b4fc;
+}
+
+.demo-scenario-note {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* ── Section Cards ─────────────────────────────────────────── */
+
+.section-card {
+  margin-top: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 14px;
+  animation: fadeIn 0.3s ease;
+}
+
+.section-card-audit {
+  border-color: rgba(99, 102, 241, 0.15);
+  background: rgba(99, 102, 241, 0.03);
+}
+
+.section-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.section-card-icon {
+  font-size: 16px;
+}
+
+.section-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* ── Policy Simple Explanation ─────────────────────────────── */
+
+.policy-simple-explanation {
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.policy-explanation-pass {
+  background: rgba(34, 197, 94, 0.06);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.15);
+}
+
+.policy-explanation-fail {
+  background: rgba(239, 68, 68, 0.06);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+/* ── Audit View Toggle ─────────────────────────────────────── */
+
+.audit-view-toggle {
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.audit-toggle-btn {
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+
+.audit-toggle-btn:hover {
+  color: var(--text-secondary);
+}
+
+.audit-toggle-active {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+}
+
+.audit-disclosure {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  opacity: 0.7;
+  line-height: 1.4;
+}
+
+.incident-reason-technical {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+/* ── Audit Trail Toggle Button ─────────────────────────────── */
+
+.audit-trail-toggle-btn {
+  margin-top: 10px;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #a5b4fc;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  width: 100%;
+  text-align: center;
+}
+
+.audit-trail-toggle-btn:hover {
+  background: rgba(99, 102, 241, 0.14);
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+/* ── Premium Welcome ───────────────────────────────────────── */
+
+.chat-welcome {
+  position: relative;
+  text-align: center;
+  padding: 48px 24px 32px;
+  animation: fadeIn 0.5s ease;
+}
+
+.chat-welcome-glow {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  height: 200px;
+  background: radial-gradient(ellipse, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.chat-welcome-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  max-width: 500px;
+  margin: 0 auto 24px;
+  line-height: 1.6;
+}
+
+.chat-welcome-features {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.welcome-feature {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 6px 12px;
+}
+
+/* ── Nested Section Card: remove double borders on PolicyPanel inside section-card ─ */
+.section-card .policy-panel {
+  border: none;
+  padding: 0;
+  background: transparent;
+}
+
+.section-card .ranking-explanation {
+  border: none;
+  padding: 0;
+  background: transparent;
+}
+
+/* ── Checkout section inside section-card ── */
+.section-card .checkout-section {
+  /* Remove any extra spacing from the outer checkout container */
+}
+
+/* ── Section card inner timeline cleanup ── */
+.section-card-audit .incident-timeline {
+  border: none;
+  padding: 0;
+  background: transparent;
+}

@@ -25,11 +25,11 @@
 | 3 — Policy + Approval | ✅ Complete |
 | 4 — Razorpay Payment | ✅ Complete (`v0.4-payments` tag) |
 | 5 — Failure Handling | ✅ Complete |
-| 6 — Audit + Premium UX | 🔲 Not Started |
+| 6 — Audit + Premium UX | ✅ Complete |
 | 7–9 — Stretch | 🔲 Not Started (only after 1–6 stable) |
 
-**Last completed phase:** 5
-**Next phase to build:** 6 — Audit + Premium UX
+**Last completed phase:** 6
+**All mandatory phases (1–6) are complete.**
 
 ---
 
@@ -84,11 +84,16 @@ See `docs/AGENT_HANDOFF.md` for full details.
 - **AuditEventType**: Added `RETRY_BLOCKED` and `PAYMENT_RECONCILED` to the schema.
 - **Tests**: 12 new tests in `tests/recovery.test.ts`. Total: 238 tests passing.
 
-**Phase 6 — Audit + Premium UX (Next):**
-1. Full audit timeline dashboard view
-2. Metrics dashboard
-3. Demo / seeded mode
-4. Premium UI polish and animations
+### Phase 6 — Audit + Premium UX ✅ Complete
+- **DemoPanel** (`src/app/components/DemoPanel.tsx`): 4 pre-configured demo scenario buttons (success, rejection, approval, timeout). Auto-fills real queries. Labeled as test mode.
+- **IncidentTimeline** updated: Simple/Technical view toggle. Simple shows human-readable sentences. Technical shows event IDs, types, and metadata. Disclosure line clarifies no secrets are shown.
+- **PolicyPanel** updated: Plain-language explanation generated deterministically from policy check data. Shows sentences like “Purchase allowed because the product costs ₹3,799 and your agent limit is ₹5,000.”
+- **ChatMessage** refactored: Section cards (Intent, AI Recommendation, Policy, Payment, Audit Trail) with labeled headers. Audit trail auto-expands on terminal states, toggleable during the flow.
+- **Page refresh**: Premium welcome with feature badges and glow effect. Phase badge in header. DemoPanel integrated.
+- **CSS**: 350+ new lines covering demo cards, section cards, audit toggle, policy explanations, welcome glow.
+- **Tests**: All 238 tests passing. No backend changes in this phase.
+
+**Phases 7–9 are stretch goals.** Only start if 1–6 are stable.
 
 ---
 

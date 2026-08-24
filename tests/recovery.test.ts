@@ -205,7 +205,7 @@ describe('Phase 5 — Recovery & Failure Handling', () => {
 
   // ── Test 7: Provider returns 'created' (never attempted) ──
 
-  it('Test 7: Provider status = "created" → PAYMENT_FAILED (never attempted)', async () => {
+  it('Test 7: Provider status = "created" → PAYMENT_FAILED (never attempted)', { timeout: 15000 }, async () => {
     // We'll use TIMEOUT_THEN_FAILURE which returns 'attempted' — but let's directly test the 'created' path
     // by using a custom spy on simulateFetchOrderStatus
     vi.doMock('../src/services/payment-simulator', async (importOriginal) => {

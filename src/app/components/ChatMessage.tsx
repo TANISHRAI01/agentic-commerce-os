@@ -7,6 +7,7 @@ import PolicyPanel from './PolicyPanel';
 import ApprovalDialog from './ApprovalDialog';
 import CheckoutButton from './CheckoutButton';
 import PaymentReceipt from './PaymentReceipt';
+import IncidentTimeline from './IncidentTimeline';
 
 interface PolicyCheck {
   name: string;
@@ -101,6 +102,7 @@ export default function ChatMessage({ type, content, timestamp, shopResult }: Ch
     razorpayPaymentId?: string;
     razorpayOrderId?: string;
   } | null>(null);
+  const [showAuditTrail, setShowAuditTrail] = useState(false);
 
   const handleApprovalDecision = (decision: 'APPROVED' | 'REJECTED') => {
     setTransactionState(decision === 'APPROVED' ? 'APPROVED' : 'BLOCKED');
@@ -150,16 +152,22 @@ export default function ChatMessage({ type, content, timestamp, shopResult }: Ch
   const isPayable = currentState === 'APPROVED' || currentState === 'AUTO_APPROVED';
   const isCompleted = currentState === 'COMPLETED';
   const isPaymentFailed = currentState === 'PAYMENT_FAILED';
+  const isTerminal = isCompleted || isBlocked || isPaymentFailed || currentState === 'CANCELLED';
+  const hasTransaction = !!shopResult?.transactionId;
 
   // AI message
   return (
     <div className="chat-message chat-message-ai">
       <div className="message-avatar message-avatar-ai">AI</div>
       <div className="message-content message-content-ai">
-        {/* Intent summary */}
+
+        {/* ── Section 1: Intent ── */}
         {shopResult?.intent && (
-          <div className="intent-summary">
-            <span className="intent-label">Understood:</span>
+          <div className="section-card">
+            <div className="section-card-header">
+              <span className="section-card-icon">🧠</span>
+              <span className="section-card-title">Intent</span>
+            </div>
             <div className="intent-chips">
               <span className="intent-chip">📦 {shopResult.intent.category}</span>
               {shopResult.intent.maximumPrice && (
@@ -201,14 +209,20 @@ export default function ChatMessage({ type, content, timestamp, shopResult }: Ch
           </div>
         )}
 
-        {/* Ranking explanation */}
+        {/* ── Section 2: AI Recommendation ── */}
         {shopResult?.ranking && (
-          <RankingExplanation
-            summary={shopResult.ranking.summary}
-            confidenceScore={shopResult.ranking.confidenceScore}
-            reasons={shopResult.ranking.reasons}
-            alternatives={shopResult.ranking.alternatives}
-          />
+          <div className="section-card">
+            <div className="section-card-header">
+              <span className="section-card-icon">🎯</span>
+              <span className="section-card-title">AI Recommendation</span>
+            </div>
+            <RankingExplanation
+              summary={shopResult.ranking.summary}
+              confidenceScore={shopResult.ranking.confidenceScore}
+              reasons={shopResult.ranking.reasons}
+              alternatives={shopResult.ranking.alternatives}
+            />
+          </div>
         )}
 
         {/* Selected product */}
@@ -219,15 +233,21 @@ export default function ChatMessage({ type, content, timestamp, shopResult }: Ch
           />
         )}
 
-        {/* Policy Panel */}
+        {/* ── Section 3: Policy ── */}
         {shopResult?.policyResult && (
-          <PolicyPanel
-            policyResult={shopResult.policyResult}
-            transactionState={currentState}
-          />
+          <div className="section-card">
+            <div className="section-card-header">
+              <span className="section-card-icon">🛡️</span>
+              <span className="section-card-title">Policy</span>
+            </div>
+            <PolicyPanel
+              policyResult={shopResult.policyResult}
+              transactionState={currentState}
+            />
+          </div>
         )}
 
-        {/* Approval Dialog — only when awaiting approval */}
+        {/* Approval Dialog */}
         {shopResult?.requiresApproval &&
           shopResult?.transactionId &&
           shopResult?.selectedProduct &&
@@ -243,20 +263,26 @@ export default function ChatMessage({ type, content, timestamp, shopResult }: Ch
           />
         )}
 
-        {/* Checkout Button — when approved and ready for payment */}
+        {/* ── Section 4: Payment ── */}
         {isPayable &&
           shopResult?.transactionId &&
           shopResult?.selectedProduct && (
-          <CheckoutButton
-            transactionId={shopResult.transactionId}
-            productName={shopResult.selectedProduct.name}
-            productPrice={shopResult.selectedProduct.price}
-            merchantTrustTier={shopResult.selectedProduct.merchantTrustTier}
-            onPaymentComplete={handlePaymentComplete}
-          />
+          <div className="section-card">
+            <div className="section-card-header">
+              <span className="section-card-icon">💳</span>
+              <span className="section-card-title">Payment</span>
+            </div>
+            <CheckoutButton
+              transactionId={shopResult.transactionId}
+              productName={shopResult.selectedProduct.name}
+              productPrice={shopResult.selectedProduct.price}
+              merchantTrustTier={shopResult.selectedProduct.merchantTrustTier}
+              onPaymentComplete={handlePaymentComplete}
+            />
+          </div>
         )}
 
-        {/* Payment Receipt — after successful payment */}
+        {/* Payment Receipt */}
         {isCompleted &&
           shopResult?.transactionId &&
           shopResult?.selectedProduct &&
@@ -308,6 +334,26 @@ export default function ChatMessage({ type, content, timestamp, shopResult }: Ch
               )
             ))}
           </div>
+        )}
+
+        {/* ── Section 5: Audit Trail ── */}
+        {hasTransaction && (isTerminal || showAuditTrail) && (
+          <div className="section-card section-card-audit">
+            <IncidentTimeline
+              transactionId={shopResult!.transactionId!}
+              autoRefresh={!isTerminal}
+              title="Audit Trail"
+            />
+          </div>
+        )}
+
+        {hasTransaction && !isTerminal && !showAuditTrail && (
+          <button
+            className="audit-trail-toggle-btn"
+            onClick={() => setShowAuditTrail(true)}
+          >
+            📋 Show Audit Trail
+          </button>
         )}
 
         {/* Fallback text */}

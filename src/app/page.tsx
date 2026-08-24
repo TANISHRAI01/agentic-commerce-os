@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import ChatMessage from './components/ChatMessage';
 import LoadingState from './components/LoadingState';
+import DemoPanel from './components/DemoPanel';
 
 const SUGGESTIONS = [
   'Find me noise-cancelling headphones under ₹8,000',
@@ -36,14 +37,13 @@ export default function Home() {
     scrollToBottom();
   }, [messages, isLoading]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!query.trim() || isLoading) return;
 
     const userQuery = query.trim();
     setQuery('');
 
-    // Add user message
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       type: 'user',
@@ -99,6 +99,11 @@ export default function Home() {
     inputRef.current?.focus();
   };
 
+  const handleDemoScenario = (scenarioQuery: string) => {
+    setQuery(scenarioQuery);
+    inputRef.current?.focus();
+  };
+
   const hasMessages = messages.length > 0;
 
   return (
@@ -109,26 +114,52 @@ export default function Home() {
           <div className="header-logo">⚡</div>
           <div>
             <div className="header-title">Agentic Commerce OS</div>
-            <div className="header-subtitle">AI-Powered Shopping Assistant</div>
+            <div className="header-subtitle">AI-Powered Shopping · Razorpay Buildathon 2026</div>
           </div>
         </div>
-        <div className="header-status">
-          <span className="status-dot" />
-          <span>Phase 4 — Razorpay Payment Active</span>
+        <div className="header-badges">
+          <div className="header-status">
+            <span className="status-dot" />
+            <span>Live</span>
+          </div>
+          <div className="header-phase-badge">Phase 6 — Auditable Commerce</div>
         </div>
       </header>
+
+      {/* Demo Panel */}
+      <DemoPanel onSelectScenario={handleDemoScenario} disabled={isLoading} />
 
       {/* Chat Area */}
       <main className="chat-container">
         <div className="chat-messages">
           {!hasMessages && (
             <div className="chat-welcome">
+              <div className="chat-welcome-glow" />
               <div className="chat-welcome-icon">🛒</div>
               <h2>What would you like to buy?</h2>
-              <p>
-                Tell me what you&apos;re looking for in plain English. I&apos;ll search the catalog,
-                find the best options, and explain exactly why I recommend each product.
+              <p className="chat-welcome-subtitle">
+                Describe what you need in plain English. The AI will search the catalog,
+                recommend the best product, run policy checks, and process payment &mdash;
+                with every decision fully auditable.
               </p>
+              <div className="chat-welcome-features">
+                <div className="welcome-feature">
+                  <span>🎯</span>
+                  <span>AI Recommendation</span>
+                </div>
+                <div className="welcome-feature">
+                  <span>🛡️</span>
+                  <span>Policy Engine</span>
+                </div>
+                <div className="welcome-feature">
+                  <span>💳</span>
+                  <span>Razorpay Checkout</span>
+                </div>
+                <div className="welcome-feature">
+                  <span>📋</span>
+                  <span>Full Audit Trail</span>
+                </div>
+              </div>
               <div className="chat-suggestions">
                 {SUGGESTIONS.map((s, i) => (
                   <button
