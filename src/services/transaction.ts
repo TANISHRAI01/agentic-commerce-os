@@ -118,12 +118,16 @@ export function transitionTransaction(
     values.push(updates.intentId);
   }
 
-  values.push(transactionId);
+  values.push(transactionId, txn.state);
 
   db.run(
-    `UPDATE transactions SET ${setClauses.join(', ')} WHERE id = ?`,
+    `UPDATE transactions SET ${setClauses.join(', ')} WHERE id = ? AND state = ?`,
     values,
   );
+
+  if (db.getRowsModified() === 0) {
+    throw new Error(`Concurrent modification: Transaction ${transactionId} is no longer in state ${txn.state}`);
+  }
 
   createAuditEvent(db, {
     transactionId,
