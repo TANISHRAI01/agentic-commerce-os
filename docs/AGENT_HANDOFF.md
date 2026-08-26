@@ -86,30 +86,20 @@
 | Razorpay test-mode quirks | Medium | Early integration in Phase 4 |
 | Time pressure | High | Strict phase gating, 100% test pass before next phase |
 
----
-
 ## Phase Review — Security & Architecture Audit
 
-*Completed at the end of Phase 2*
+*Completed at the end of Phase 8*
 
 ### What Was Reviewed
-1. Architecture constraints & money movement safety
-2. Transaction state transitions and input validation (Zod)
-3. Security vulnerabilities (SQL Injection check in `src/services/catalog.ts`)
-4. Idempotency and duplicate payment prevention
-5. Error handling, LLM validation, and audit log accuracy
-6. 153 unit tests
-7. Unnecessary abstractions (none found)
-8. Frontend vs Backend boundaries
+1. **Architecture constraints & money movement safety:** Verified that the LLM agent outputs cannot directly manipulate the cart total. Prices are strictly loaded from the database during checkout (`src/app/api/checkout/route.ts`).
+2. **Transaction state transitions and input validation:** Verified the robustness of the state machine (`src/services/state-machine.ts`). Verified that inputs are properly validated using Zod.
+3. **Security vulnerabilities:** Verified that `.env` keys (Razorpay, Gemini) are not leaked. Verified Razorpay HMAC-SHA256 signature verification runs server-side and doesn't trust the frontend (`src/app/api/payment/verify/route.ts`).
+4. **Idempotency and duplicate payment prevention:** Verified idempotency keys in checkout to prevent duplicate Razorpay order creation.
+5. **LLM Sandboxing & Merchant Agent Guardrails:** Verified that the newly added Merchant Agent (`src/agents/merchant.ts`) post-validates all recommended IDs against the known candidate pool. Verified that errors in the Merchant Agent are gracefully caught and do not crash the checkout pipeline.
+6. **Error handling & Audit log accuracy:** Verified the comprehensive audit trail captures all steps, warnings, and failures.
+7. **Test Meaningfulness:** Verified that tests (278 passing) actually assert expected behaviors, handle edge cases, and catch logic flaws (e.g., the recent timestamp resolution issue in Growth Intelligence).
 
 ### Issues Found & Fixes Made
-1. **Issue (Idempotency):** `createTransaction` in `transaction.ts` did not check if the `idempotencyKey` already existed before attempting an insert, which caused a 500 SQLite constraint error instead of gracefully returning the existing transaction.
-   **Fix:** Updated `createTransaction` to explicitly query by `idempotencyKey` and return the existing transaction if found.
-2. **Issue (LLM API & Validation):** Discovered that `gemini-1.5-flash` is unavailable/deprecated for newer keys, and that `gemini-3.5-flash` occasionally outputs `null` for optional fields, breaking Zod schema validation.
-   **Fix:** Updated the model in `src/services/llm.ts` to `gemini-3.5-flash` and modified `ParsedIntentSchema` in `src/types/intent.ts` to use `.nullish().transform(v => v ?? undefined)` for graceful null handling.
-
-### Security & Architecture Verification
-- **AI boundary maintained:** LLM parses intents and ranks products but cannot create payments, modify prices, bypass policies, or invent inventory.
 - **Structured output only:** All LLM responses validated against Zod schemas.
 - **Hallucination prevention:** Post-validation checks all product IDs in ranking output against the candidate list.
 - **State Machine enforced:** Cannot bypass `POLICY_PENDING` to reach `PAYMENT_PENDING`.

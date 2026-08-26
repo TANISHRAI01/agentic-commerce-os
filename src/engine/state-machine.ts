@@ -32,7 +32,7 @@ const VALID_TRANSITIONS: Record<TransactionState, TransactionState[]> = {
 /**
  * Terminal states — transactions in these states cannot transition further.
  */
-export const TERMINAL_STATES: ReadonlySet<TransactionState> = new Set([
+export const TERMINAL_STATES: ReadonlySet<TransactionState> = new Set<TransactionState>([
   'COMPLETED',
   'CANCELLED',
   'BLOCKED',

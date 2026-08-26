@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const db = await getDb();
-    const products = searchProducts(db, { merchantId: params.merchantId, limit: 100 });
+    const products = searchProducts(db, { merchantId: params.merchantId, limit: 100, offset: 0 });
     return NextResponse.json({ success: true, catalog: products });
   } catch (error) {
     console.error('Error fetching merchant catalog:', error);

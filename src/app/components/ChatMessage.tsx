@@ -8,6 +8,7 @@ import ApprovalDialog from './ApprovalDialog';
 import CheckoutButton from './CheckoutButton';
 import PaymentReceipt from './PaymentReceipt';
 import IncidentTimeline from './IncidentTimeline';
+import MerchantRecommendations from './MerchantRecommendations';
 
 interface PolicyCheck {
   name: string;
@@ -93,6 +94,41 @@ interface ChatMessageProps {
     policyResult?: PolicyResult;
     requiresApproval?: boolean;
     searchRelaxed?: boolean;
+    merchantRecommendations?: {
+      crossSells: Array<{
+        productId: string;
+        productName: string;
+        price: number;
+        type: 'CROSS_SELL';
+        reason: string;
+        isOptional: true;
+      }>;
+      upsells: Array<{
+        productId: string;
+        productName: string;
+        price: number;
+        type: 'UPSELL';
+        reason: string;
+        isOptional: true;
+      }>;
+      bundles: Array<{
+        productId: string;
+        productName: string;
+        price: number;
+        type: 'BUNDLE';
+        reason: string;
+        isOptional: true;
+      }>;
+      contextualOffer: {
+        productId: string;
+        productName: string;
+        price: number;
+        type: 'CONTEXTUAL_OFFER';
+        reason: string;
+        isOptional: true;
+      } | null;
+      summary: string;
+    } | null;
   };
 }
 
@@ -231,6 +267,11 @@ export default function ChatMessage({ type, content, timestamp, shopResult }: Ch
             product={shopResult.selectedProduct}
             isRecommended={true}
           />
+        )}
+
+        {/* ── Merchant Recommendations (optional, Phase 8) ── */}
+        {shopResult?.merchantRecommendations && (
+          <MerchantRecommendations recommendations={shopResult.merchantRecommendations as Parameters<typeof MerchantRecommendations>[0]['recommendations']} />
         )}
 
         {/* ── Section 3: Policy ── */}

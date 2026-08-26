@@ -242,6 +242,8 @@ export const AuditEventType = z.enum([
   'DUPLICATE_PREVENTED',
   'TRANSACTION_COMPLETE',
   'TRANSACTION_FAILED',
+  'MERCHANT_AGENT_STARTED',
+  'MERCHANT_AGENT_COMPLETE',
   'STATE_TRANSITION',
 ]);
 export type AuditEventType = z.infer<typeof AuditEventType>;

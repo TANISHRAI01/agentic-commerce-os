@@ -5,9 +5,11 @@ import { createAuditEvent } from '@/audit/logger';
 import { searchProducts, getProductById, getMerchantById } from '@/services/catalog';
 import { parseIntentToSearchParams } from '@/agents/discovery';
 import { rankProducts, HallucinatedProductError } from '@/agents/decision';
+import { generateMerchantRecommendations, HallucinatedRecommendationError } from '@/agents/merchant';
 import { LLMValidationError, LLMConnectionError } from '@/services/llm';
 import { evaluatePolicy, DEFAULT_POLICY_CONFIG } from '@/engine/policy-engine';
 import type { Product, Merchant } from '@/types/schemas';
+import type { MerchantRecommendations } from '@/types/ranking';
 
 /**
  * POST /api/shop — Unified AI shopping pipeline
@@ -176,6 +178,51 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // ── Step 5a: Merchant Agent (optional, non-fatal) ──
+    createAuditEvent(db, {
+      transactionId: txn.id,
+      event: 'MERCHANT_AGENT_STARTED',
+      result: 'INFO',
+      reason: `Merchant Agent generating optional recommendations for ${selectedProduct.name}`,
+    });
+
+    let merchantRecommendations: MerchantRecommendations | null = null;
+    try {
+      merchantRecommendations = await generateMerchantRecommendations(
+        selectedProduct,
+        products,
+        merchants,
+        intent,
+      );
+      createAuditEvent(db, {
+        transactionId: txn.id,
+        event: 'MERCHANT_AGENT_COMPLETE',
+        result: 'SUCCESS',
+        reason: `Merchant Agent returned ${(
+          merchantRecommendations.crossSells.length +
+          merchantRecommendations.upsells.length +
+          merchantRecommendations.bundles.length +
+          (merchantRecommendations.contextualOffer ? 1 : 0)
+        )} optional recommendations`,
+        metadata: {
+          crossSellCount: merchantRecommendations.crossSells.length,
+          upsellCount: merchantRecommendations.upsells.length,
+          bundleCount: merchantRecommendations.bundles.length,
+          hasContextualOffer: !!merchantRecommendations.contextualOffer,
+        },
+      });
+    } catch (merchantErr) {
+      // Merchant Agent failure is non-fatal — log and continue
+      console.error('Merchant Agent error (non-fatal):', merchantErr);
+      createAuditEvent(db, {
+        transactionId: txn.id,
+        event: 'MERCHANT_AGENT_COMPLETE',
+        result: 'WARNING',
+        reason: `Merchant Agent failed — continuing without recommendations: ${merchantErr instanceof Error ? merchantErr.message : String(merchantErr)}`,
+      });
+    }
+
+
     // ── Step 5: Run Policy Engine (deterministic) ──
     transitionTransaction(db, txn.id, 'POLICY_PENDING');
 
@@ -256,7 +303,9 @@ export async function POST(request: NextRequest) {
       policyResult,
       requiresApproval: policyResult.requiresApproval,
       transactionState: finalState,
+      merchantRecommendations,
     });
+
   } catch (error) {
     if (error instanceof HallucinatedProductError) {
       return NextResponse.json(

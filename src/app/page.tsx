@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import ChatMessage from './components/ChatMessage';
 import LoadingState from './components/LoadingState';
 import DemoPanel from './components/DemoPanel';
+import MerchantDashboard from './components/MerchantDashboard';
 
 const SUGGESTIONS = [
   'Find me noise-cancelling headphones under ₹8,000',
@@ -22,10 +23,13 @@ interface Message {
   shopResult?: Record<string, unknown>;
 }
 
+type ViewMode = 'chat' | 'dashboard';
+
 export default function Home() {
   const [query, setQuery] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -118,18 +122,44 @@ export default function Home() {
           </div>
         </div>
         <div className="header-badges">
+          <div className="header-view-toggle">
+            <button
+              id="view-chat-btn"
+              className={`view-toggle-btn ${viewMode === 'chat' ? 'view-toggle-active' : ''}`}
+              onClick={() => setViewMode('chat')}
+            >
+              💬 Shop
+            </button>
+            <button
+              id="view-dashboard-btn"
+              className={`view-toggle-btn ${viewMode === 'dashboard' ? 'view-toggle-active' : ''}`}
+              onClick={() => setViewMode('dashboard')}
+            >
+              📊 Dashboard
+            </button>
+          </div>
           <div className="header-status">
             <span className="status-dot" />
             <span>Live</span>
           </div>
-          <div className="header-phase-badge">Phase 6 — Auditable Commerce</div>
+          <div className="header-phase-badge">Phase 8 — Merchant AI</div>
         </div>
       </header>
 
-      {/* Demo Panel */}
-      <DemoPanel onSelectScenario={handleDemoScenario} disabled={isLoading} />
+      {/* Demo Panel - only in chat mode */}
+      {viewMode === 'chat' && (
+        <DemoPanel onSelectScenario={handleDemoScenario} disabled={isLoading} />
+      )}
+
+      {/* Dashboard View */}
+      {viewMode === 'dashboard' && (
+        <main className="dashboard-main">
+          <MerchantDashboard />
+        </main>
+      )}
 
       {/* Chat Area */}
+      {viewMode === 'chat' && (
       <main className="chat-container">
         <div className="chat-messages">
           {!hasMessages && (
@@ -216,6 +246,8 @@ export default function Home() {
           </button>
         </form>
       </main>
+      )}  {/* end chat view */}
+
 
       {/* Footer */}
       <footer className="footer">

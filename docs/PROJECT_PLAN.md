@@ -15,10 +15,10 @@
 | 2 | AI Buyer | ✅ Complete | `phase-2` | Discovery + Decision agents, Gemini LLM, 153 tests passing |
 | 3 | Policy + Approval | ✅ Complete | `phase-3` | Deterministic policy engine, approval flow |
 | 4 | Razorpay Payment | ✅ Complete | `phase-4` | Server-side Razorpay, HMAC verification, 222 tests passing |
-| 5 | Failure Handling | 🔲 Not Started | — | Timeout, safe recovery, idempotency |
-| 6 | Audit + Premium UX | 🔲 Not Started | — | Audit timeline, metrics, demo mode, polish |
-| 7 | AI-readable Catalog | 🔲 Stretch | — | Structured catalog intelligence |
-| 8 | Merchant Agent + Growth | 🔲 Stretch | — | Upsell/cross-sell, merchant agent |
+| 5 | Failure Handling | ✅ Complete | `phase-5` | Timeout, safe recovery, idempotency, 238 tests passing |
+| 6 | Audit + Premium UX | ✅ Complete | `phase-6` | Audit timeline, metrics, demo mode, polish |
+| 7 | AI-readable Catalog | ✅ Complete | `phase-7` | Structured catalog intelligence, merchant APIs |
+| 8 | Merchant Agent + Growth | ✅ Complete | `phase-8` | Upsell/cross-sell, merchant agent, growth dashboard, 278 tests passing |
 | 9 | Agent-to-Agent Commerce | 🔲 Stretch | — | Buyer ↔ merchant negotiation |
 
 ---

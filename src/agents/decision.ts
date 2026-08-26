@@ -130,6 +130,7 @@ export async function rankProducts(
   }
 
   // Validate all alternative product IDs
+  result.alternatives = result.alternatives || [];
   for (const alt of result.alternatives) {
     if (!validIds.includes(alt.productId)) {
       throw new HallucinatedProductError(alt.productId, validIds);
@@ -141,5 +142,5 @@ export async function rankProducts(
     alt => alt.productId !== result.selectedProductId
   );
 
-  return result;
+  return result as RankingResult;
 }

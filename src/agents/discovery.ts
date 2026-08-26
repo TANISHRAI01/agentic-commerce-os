@@ -55,7 +55,14 @@ export async function parseIntent(rawQuery: string): Promise<ParsedIntent> {
     ParsedIntentSchema,
   );
 
-  return result;
+  return {
+    ...result,
+    requiredAttributes: result.requiredAttributes || [],
+    preferredAttributes: result.preferredAttributes || [],
+    exclusions: result.exclusions || [],
+    ambiguityQuestions: result.ambiguityQuestions || [],
+    quantity: result.quantity || 1,
+  } as ParsedIntent;
 }
 
 /**

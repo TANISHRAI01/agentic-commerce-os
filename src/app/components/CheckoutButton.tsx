@@ -263,7 +263,6 @@ export default function CheckoutButton({
           <button
             className="checkout-recover-btn"
             onClick={handleRecover}
-            disabled={state === 'recovering'}
           >
             🔍 Verify Payment Status
           </button>

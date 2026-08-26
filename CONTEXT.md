@@ -27,10 +27,11 @@
 | 5 — Failure Handling | ✅ Complete |
 | 6 — Audit + Premium UX | ✅ Complete |
 | 7 — AI-Readable Merchant Layer | ✅ Complete |
-| 8–9 — Stretch | 🔲 Not Started (only after 1–7 stable) |
+| 8 — Merchant AI + Growth | ✅ Complete |
+| 9 — Stretch | 🔲 Not Started |
 
-**Last completed phase:** 7
-**All mandatory phases (1–6) and Phase 7 are complete.**
+**Last completed phase:** 8
+**All mandatory phases (1–6) and Phases 7–8 are complete.**
 
 ---
 
@@ -106,7 +107,16 @@ See `docs/AGENT_HANDOFF.md` for full details.
 - **Buyer Integration**: Updated `src/app/api/shop/route.ts` to fetch merchant details. Enriched `Decision Agent` prompt (`src/agents/decision.ts`) with new product and merchant metadata, enabling AI comparison across "Merchant, Product, Price, Delivery, Trust, Offer".
 - **Tests**: All tests passing.
 
-**Phases 8–9 are stretch goals.** Only start if 1–7 are stable.
+### Phase 8 — Merchant AI + Growth Intelligence ✅ Complete
+- **MerchantRecommendationsSchema** (`src/types/ranking.ts`): Added `MerchantRecommendationItem` (with `isOptional: z.literal(true)` guardrail), `MerchantRecommendationsSchema` (cross-sells, upsells, bundles, contextual offer). Two new `AuditEventType` values: `MERCHANT_AGENT_STARTED`, `MERCHANT_AGENT_COMPLETE`.
+- **Merchant Agent** (`src/agents/merchant.ts`): LLM-powered optional recommendations. Builds prompt from buyer intent + selected product + other candidates. Post-validates all returned IDs against candidate list (same hallucination guard as Decision Agent). Filters selected product before validation. Non-fatal in the shop pipeline.
+- **Growth Intelligence Service** (`src/services/growth-intelligence.ts`): Fully deterministic (no LLM). Five signal types: top recommended (by rating), upsell opportunities (20–80% above category median), cross-sell pairs (tag-overlap heuristic), abandoned cart signals (stale non-terminal transactions), campaign suggestions (structural catalog analysis). No revenue claims.
+- **API Routes**: `POST /api/shop` enriched with `merchantRecommendations` field (non-fatal agent call after CART_READY). New `GET /api/merchant-intelligence` returns full `GrowthIntelligenceReport`.
+- **UI Components**: `RecommendationCard.tsx` (Accept = informational only, Dismiss = removes card), `MerchantRecommendations.tsx` (collapsible grouped panel), `MerchantDashboard.tsx` (5-tab dashboard: Top Products, Upsell, Cross-sell, Abandoned, Campaigns). Main page has 💬 Shop / 📊 Dashboard view toggle. Phase badge updated to Phase 8.
+- **Tests**: 40 new tests (10 merchant-agent, 30 growth-intelligence). **Total: 278 tests passing.**
+- **Guardrails**: Payment amount never touched by Merchant Agent. `isOptional: true` enforced at Zod schema level. All LLM output post-validated. Errors in Merchant Agent are non-fatal — shop flow always continues.
+
+**Phase 9 is a stretch goal.**
 
 ---
 
@@ -165,7 +175,7 @@ See `docs/AGENT_HANDOFF.md` for full details.
 
 ```bash
 npm run dev      # Start dev server (localhost:3000)
-npm test         # Run all tests (238 passing)
+npm test         # Run all tests (278 passing)
 npm run seed     # Seed the database with 60 products
 npm run build    # Build for production
 
@@ -173,9 +183,14 @@ npm run build    # Build for production
 # PAYMENT_SIM_MODE=TIMEOUT_THEN_SUCCESS npm run dev
 # PAYMENT_SIM_MODE=TIMEOUT_THEN_FAILURE npm run dev
 # PAYMENT_SIM_MODE=VERIFICATION_ERROR   npm run dev
+
+# Phase 8 — Test Merchant Dashboard:
+# 1. npm run dev
+# 2. Click "📊 Dashboard" tab in header
+# 3. Browse Top Products, Upsell, Cross-sell, Abandoned, Campaigns tabs
 ```
 
 ---
 
-*Last updated: Phase 5 completion*
+*Last updated: Phase 8 completion*
 *Update this file at the end of every phase.*

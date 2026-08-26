@@ -2,6 +2,8 @@
 // Ranking Result Schema — Structured output from Decision Agent
 // Validates LLM output for product ranking/recommendation
 // ============================================================
+// Also contains MerchantRecommendationsSchema (Phase 8)
+// ============================================================
 
 import { z } from 'zod';
 
@@ -51,3 +53,51 @@ export const RankingResultSchema = z.object({
   summary: z.string().min(1),
 });
 export type RankingResult = z.infer<typeof RankingResultSchema>;
+
+// ── Merchant Recommendation Types (Phase 8) ───────────────────
+
+export const RecommendationTypeSchema = z.enum([
+  'CROSS_SELL',
+  'UPSELL',
+  'BUNDLE',
+  'CONTEXTUAL_OFFER',
+]);
+export type RecommendationType = z.infer<typeof RecommendationTypeSchema>;
+
+/**
+ * A single optional merchant recommendation.
+ * isOptional is always true — the buyer is never auto-charged.
+ */
+export const MerchantRecommendationItemSchema = z.object({
+  /** Product ID from the catalog — MUST exist in candidate list */
+  productId: z.string().min(1),
+  /** Short product name (from catalog) */
+  productName: z.string().min(1),
+  /** Price from catalog — never modified by LLM */
+  price: z.number().positive(),
+  /** Type of recommendation */
+  type: RecommendationTypeSchema,
+  /** One-sentence reason for this recommendation */
+  reason: z.string().min(1),
+  /** Always true — buyer must explicitly opt in */
+  isOptional: z.literal(true),
+});
+export type MerchantRecommendationItem = z.infer<typeof MerchantRecommendationItemSchema>;
+
+/**
+ * Full set of optional merchant recommendations returned by the Merchant Agent.
+ * All lists may be empty. No item is ever auto-added to a payment.
+ */
+export const MerchantRecommendationsSchema = z.object({
+  /** Products from other/same category that pair well */
+  crossSells: z.array(MerchantRecommendationItemSchema).max(3).default([]),
+  /** Higher-priced alternatives with more features */
+  upsells: z.array(MerchantRecommendationItemSchema).max(2).default([]),
+  /** Products that create a logical bundle */
+  bundles: z.array(MerchantRecommendationItemSchema).max(3).default([]),
+  /** Single contextual offer, if applicable */
+  contextualOffer: MerchantRecommendationItemSchema.nullable().default(null),
+  /** Agent summary for why these recommendations were made */
+  summary: z.string().default(''),
+});
+export type MerchantRecommendations = z.infer<typeof MerchantRecommendationsSchema>;
