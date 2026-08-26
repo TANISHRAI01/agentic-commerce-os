@@ -134,6 +134,18 @@
 
 ---
 
+### Phase 7: AI-Readable Merchant Layer
+**Status:** Completed
+**Goal:** Make merchants directly legible to AI buyers.
+
+**Tasks:**
+- [x] **Merchant Model**: Create profiles with trust tier, policies, delivery regions, payment capabilities, business rules.
+- [x] **Product Schema**: Add availability, offer eligibility, inventory.
+- [x] **Merchant API**: Build `/api/merchants` structured REST endpoints.
+- [x] **Buyer Integration**: Enhance Discovery/Decision Agents to consider merchant policies, offers, and metadata.
+
+---
+
 ### Phase 6 — Audit + Premium UX
 
 **Goal:** Complete audit trail, metrics, demo mode, premium visual polish.

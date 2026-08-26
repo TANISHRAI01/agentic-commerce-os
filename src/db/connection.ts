@@ -82,6 +82,10 @@ function initSchema(database: SqlJsDatabase): void {
       name TEXT NOT NULL,
       trust_tier TEXT NOT NULL DEFAULT 'UNRATED',
       description TEXT,
+      policies TEXT NOT NULL DEFAULT '[]',
+      delivery_regions TEXT NOT NULL DEFAULT '[]',
+      payment_capabilities TEXT NOT NULL DEFAULT '[]',
+      business_rules TEXT NOT NULL DEFAULT '{}',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
@@ -102,6 +106,8 @@ function initSchema(database: SqlJsDatabase): void {
       attributes TEXT NOT NULL DEFAULT '{}',
       tags TEXT NOT NULL DEFAULT '[]',
       image_url TEXT,
+      availability TEXT NOT NULL DEFAULT 'IN_STOCK',
+      offer_eligibility TEXT NOT NULL DEFAULT '[]',
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (merchant_id) REFERENCES merchants(id)
     )

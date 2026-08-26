@@ -5,7 +5,7 @@
 
 import { RankingResultSchema, type RankingResult } from '@/types/ranking';
 import type { ParsedIntent } from '@/types/intent';
-import type { Product } from '@/types/schemas';
+import type { Product, Merchant } from '@/types/schemas';
 import { generateStructuredOutput } from '@/services/llm';
 
 // ── Custom Error ─────────────────────────────────────────────
@@ -27,12 +27,14 @@ export class HallucinatedProductError extends Error {
 
 // ── System Prompt ────────────────────────────────────────────
 
-function buildDecisionPrompt(intent: ParsedIntent, candidates: Product[]): string {
-  const candidateSummary = candidates.map((p, i) => (
-    `${i + 1}. ID: "${p.id}" | ${p.name} | ₹${p.price} | Rating: ${p.rating}/5 | ` +
-    `Delivery: ${p.deliveryDays} days | Merchant: ${p.merchantTrustTier} | ` +
-    `Attributes: ${JSON.stringify(p.attributes)} | Tags: ${JSON.stringify(p.tags)}`
-  )).join('\n');
+function buildDecisionPrompt(intent: ParsedIntent, candidates: Product[], merchants: Record<string, Merchant>): string {
+  const candidateSummary = candidates.map((p, i) => {
+    const m = merchants[p.merchantId];
+    return `${i + 1}. ID: "${p.id}" | ${p.name} | ₹${p.price} | Rating: ${p.rating}/5 | ` +
+      `Delivery: ${p.deliveryDays} days | Availability: ${p.availability} | Offers: ${p.offerEligibility.join(',')} | ` +
+      `Attributes: ${JSON.stringify(p.attributes)} | Tags: ${JSON.stringify(p.tags)} | ` +
+      `Merchant: ${m?.name ?? 'Unknown'} (${p.merchantTrustTier}) - Policies: ${m?.policies.join(',')} - Capabilities: ${m?.paymentCapabilities.join(',')}`;
+  }).join('\n');
 
   return `You are a product recommendation engine. You must rank the given product candidates and select the best match for the user's shopping intent.
 
@@ -54,12 +56,13 @@ ${candidateSummary}
 
 RANKING CRITERIA (in priority order):
 1. Budget compliance — product price must be within the user's budget
-2. Required attributes — must have all required attributes
-3. Delivery compliance — within delivery deadline if specified
-4. Rating — higher is better
-5. Preferred attributes — bonus for matching preferences
-6. Merchant trust — higher tier merchants preferred
-7. Value for money — best features for the price
+2. Availability — must be IN_STOCK (avoid OUT_OF_STOCK unless it's the only option)
+3. Required attributes — must have all required attributes
+4. Delivery compliance — within delivery deadline if specified
+5. Rating — higher is better
+6. Preferred attributes — bonus for matching preferences
+7. Merchant trust & policies — higher tier merchants preferred, better policies
+8. Value for money & offers — best features and eligible offers for the price
 
 RESPONSE FORMAT:
 {
@@ -103,6 +106,7 @@ CRITICAL RULES:
 export async function rankProducts(
   intent: ParsedIntent,
   candidates: Product[],
+  merchants: Record<string, Merchant>,
 ): Promise<RankingResult> {
   if (candidates.length === 0) {
     throw new Error('Cannot rank an empty candidate list');
@@ -110,7 +114,7 @@ export async function rankProducts(
 
   const validIds = candidates.map(p => p.id);
 
-  const systemPrompt = buildDecisionPrompt(intent, candidates);
+  const systemPrompt = buildDecisionPrompt(intent, candidates, merchants);
 
   const result = await generateStructuredOutput(
     systemPrompt,

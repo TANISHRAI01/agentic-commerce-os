@@ -21,6 +21,10 @@ export const MerchantSchema = z.object({
   name: z.string().min(1),
   trustTier: MerchantTrustTier,
   description: z.string().optional(),
+  policies: z.array(z.string()).default([]),
+  deliveryRegions: z.array(z.string()).default([]),
+  paymentCapabilities: z.array(z.string()).default([]),
+  businessRules: z.record(z.string(), z.unknown()).default({}),
   createdAt: z.string(),
 });
 export type Merchant = z.infer<typeof MerchantSchema>;
@@ -41,6 +45,8 @@ export const ProductSchema = z.object({
   attributes: z.record(z.string(), z.string()),
   tags: z.array(z.string()),
   imageUrl: z.string().optional(),
+  availability: z.enum(['IN_STOCK', 'OUT_OF_STOCK', 'PREORDER']).default('IN_STOCK'),
+  offerEligibility: z.array(z.string()).default([]),
   createdAt: z.string(),
 });
 export type Product = z.infer<typeof ProductSchema>;
@@ -261,6 +267,7 @@ export const CatalogSearchParams = z.object({
   maxPrice: z.number().positive().optional(),
   maxDeliveryDays: z.number().int().positive().optional(),
   minRating: z.number().min(0).max(5).optional(),
+  merchantId: z.string().optional(),
   merchantTrustTiers: z.array(MerchantTrustTier).optional(),
   inStock: z.boolean().optional(),
   tags: z.array(z.string()).optional(),

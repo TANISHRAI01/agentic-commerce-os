@@ -2,7 +2,7 @@
 
 > **What exists, what was decided, what remains, assumptions, and risks.**
 >
-> Updated at: Phase 3 completion.
+> Updated at: Phase 7 completion.
 
 ---
 
@@ -11,7 +11,7 @@
 ### What Exists
 
 - **Full Next.js 14 project** with TypeScript, running on `npm run dev`
-- **SQLite database** via sql.js (pure JS) with 5 tables, indexes, FK constraints
+- **SQLite database** via sql.js (pure JS) with 5 tables, indexes, JSON columns, FK constraints
 - **60-product synthetic catalog** across 8 categories from 6 merchants
 - **Zod schemas** with runtime validation for all core models
 - **Transaction state machine** with 17 states and validated transitions
@@ -21,20 +21,17 @@
 - **Discovery Agent** — Natural language → structured intent (ParsedIntentSchema)
 - **Decision Agent** — Product ranking with explainability, hallucination prevention (double safety net)
 - **Policy Engine** (`src/engine/policy-engine.ts`) — Pure deterministic function, 4 checks, approval threshold
-- **10 API routes** — all implemented (policy and approve fully functional; checkout/payment/verify are stubs for Phase 4)
+- **15 API routes** — all core payment, policy, transaction, and merchant endpoints implemented
 - **PolicyPanel UI** — PASS/FAIL badge per check, approval waiting/granted/rejected states
 - **ApprovalDialog UI** — Product summary + policy results + Approve/Reject buttons
-- **Conversational UI** — Chat interface with product cards, ranking explanation, policy panel
-- **222 passing tests** across 10 test suites
+- **Conversational UI** — Chat interface with product cards, ranking explanation, policy panel, audit trail
+- **DemoPanel** — Fast-forward tests of success, failure, and policy approval flows
+- **238 passing tests** across 12 test suites
 
 ### What Does NOT Exist Yet
 
-- Razorpay payment integration
-- Payment failure/timeout handling
-- Idempotency manager (Phase 5)
-- Metrics tracking
-- Demo mode (seeded/deterministic responses)
-- Premium UI polish (advanced animations)
+- Stretch goals: Multi-agent negotiation (Phases 8-9)
+- Real production database (currently using local SQLite)
 
 ---
 
@@ -58,29 +55,13 @@
 
 ## What Remains (By Phase)
 
-### Phase 3 — Policy + Approval
-- Policy Engine (pure function, no LLM)
-- Approval flow (frontend dialog + backend state)
-- Policy UI components
+### Phase 8 — Merchant Agent (Stretch)
+- Upsell/cross-sell suggestions
+- Campaign recommendations
 
-### Phase 4 — Razorpay Payment
-- Razorpay SDK setup
-- Order creation
-- Standard Checkout
-- Signature verification
-- Status polling
-
-### Phase 5 — Failure Handling
-- Timeout simulation
-- Idempotency manager
-- Duplicate prevention
-- Safe recovery flow
-
-### Phase 6 — Audit + Premium UX
-- Audit timeline component
-- Metrics dashboard
-- Seeded demo mode
-- Visual polish + animations
+### Phase 9 — Multi-Agent Negotiation (Stretch)
+- Buyer ↔ Merchant negotiation
+- Multi-merchant comparison and dynamic pricing
 
 ---
 
@@ -199,6 +180,23 @@ Phases 1–6 are complete and stable. Phases 7–9 are stretch goals that should
 
 **Concise Engineering Review:**
 The system is robust and strictly adheres to the core architectural principles: the LLM recommends, the Policy Engine authorizes, and the state machine enforces. The separation of concerns between AI and deterministic logic is well-maintained, preventing LLMs from triggering money movement. External inputs are validated, secrets are protected server-side, errors are gracefully handled, and the audit trail is accurate. The discovery and resolution of the TOCTOU vulnerability in the state machine ensures that idempotency is strictly enforced even under concurrent load. The test suite is fast, meaningful, and comprehensive. The codebase is highly maintainable, though the documentation for the state machine requires an update to match the current stable implementation.
+
+### Phase 7 Review — Security, Architecture & Polish (Conducted post-Phase 7)
+
+- **What was reviewed**: Phase 7 implementation (AI-Readable Merchant Layer), focusing on the API route integrity, architectural adherence, data validation, idempotency, error handling, and test comprehensiveness against the 14-point audit checklist.
+- **Issues found**: 
+  1. **Dead/Unnecessary Abstractions**: Leftover API routes (`/api/discover`, `/api/intent`, `/api/decide`) from Phase 2 were found. These were superseded by the unified `/api/shop` route in Phase 3. The `/api/decide` route was also broken due to the `rankProducts` signature change in Phase 7.
+  2. **Idempotency Crash in Shop Route**: The `/api/shop` endpoint properly retrieved existing transactions for duplicate idempotency keys, but it failed to check if the state was `CREATED`, blindly passing the existing transaction to `transitionTransaction` and causing a 500 State Machine Error.
+- **Fixes made**: 
+  - Deleted the dead API routes (`/api/intent`, `/api/discover`, `/api/decide`) to clean up the codebase and reduce the attack surface.
+  - Added a state guard in `src/app/api/shop/route.ts` to return a `409 Conflict` if the transaction is already past the `CREATED` state. This prevents the state machine from crashing when receiving a duplicate idempotency key.
+- **Remaining risks**:
+  - The stretch phases (Phase 8 and 9) are still to be built. 
+- **Current stable functionality**: All 7 phases are fully complete and stable. 238/238 tests pass.
+- **Recommended next phase**: Proceed to Phase 8 (Merchant Agent) if desired.
+
+**Concise Engineering Review:**
+The Phase 7 implementation accurately matches the intended architecture. There are no security vulnerabilities found; the frontend cannot bypass backend authorization, as the Policy Engine remains deterministic and server-side. The LLM cannot trigger money movement; its outputs are strictly validated and only serve to recommend products. Duplicate payments are correctly prevented via state enforcement and idempotency keys, with the newly fixed edge-case in `/api/shop`. All external inputs are validated, secrets are protected, errors are caught, and the audit trail is accurate. No features are falsely presented, dead abstractions have been removed, and the code remains highly maintainable.
 
 ---
 

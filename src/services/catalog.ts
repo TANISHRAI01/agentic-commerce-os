@@ -44,6 +44,11 @@ export function searchProducts(
     conditions.push('p.stock > 0');
   }
 
+  if (params.merchantId) {
+    conditions.push('p.merchant_id = ?');
+    bindings.push(params.merchantId);
+  }
+
   if (params.merchantTrustTiers && params.merchantTrustTiers.length > 0) {
     const placeholders = params.merchantTrustTiers.map(() => '?').join(', ');
     conditions.push(`p.merchant_trust_tier IN (${placeholders})`);
@@ -70,7 +75,7 @@ export function searchProducts(
   const sql = `
     SELECT p.id, p.merchant_id, p.name, p.description, p.category,
            p.price, p.currency, p.stock, p.rating, p.delivery_days,
-           p.merchant_trust_tier, p.attributes, p.tags, p.image_url, p.created_at
+           p.merchant_trust_tier, p.attributes, p.tags, p.image_url, p.availability, p.offer_eligibility, p.created_at
     FROM products p
     ${whereClause}
     ORDER BY p.rating DESC, p.price ASC
@@ -102,7 +107,7 @@ export function getProductById(
   const stmt = db.prepare(
     `SELECT id, merchant_id, name, description, category,
             price, currency, stock, rating, delivery_days,
-            merchant_trust_tier, attributes, tags, image_url, created_at
+            merchant_trust_tier, attributes, tags, image_url, availability, offer_eligibility, created_at
      FROM products WHERE id = ?`,
   );
   stmt.bind([productId]);
@@ -125,7 +130,7 @@ export function getMerchantById(
   merchantId: string,
 ): Merchant | null {
   const stmt = db.prepare(
-    `SELECT id, name, trust_tier, description, created_at
+    `SELECT id, name, trust_tier, description, policies, delivery_regions, payment_capabilities, business_rules, created_at
      FROM merchants WHERE id = ?`,
   );
   stmt.bind([merchantId]);
@@ -143,6 +148,10 @@ export function getMerchantById(
     name: row.name as string,
     trustTier: row.trust_tier as Merchant['trustTier'],
     description: (row.description as string) || undefined,
+    policies: typeof row.policies === 'string' ? JSON.parse(row.policies) : [],
+    deliveryRegions: typeof row.delivery_regions === 'string' ? JSON.parse(row.delivery_regions) : [],
+    paymentCapabilities: typeof row.payment_capabilities === 'string' ? JSON.parse(row.payment_capabilities) : [],
+    businessRules: typeof row.business_rules === 'string' ? JSON.parse(row.business_rules) : {},
     createdAt: row.created_at as string,
   };
 }
@@ -152,7 +161,7 @@ export function getMerchantById(
  */
 export function getAllMerchants(db: SqlJsDatabase): Merchant[] {
   const stmt = db.prepare(
-    `SELECT id, name, trust_tier, description, created_at FROM merchants ORDER BY name`,
+    `SELECT id, name, trust_tier, description, policies, delivery_regions, payment_capabilities, business_rules, created_at FROM merchants ORDER BY name`,
   );
 
   const results: Merchant[] = [];
@@ -163,6 +172,10 @@ export function getAllMerchants(db: SqlJsDatabase): Merchant[] {
       name: row.name as string,
       trustTier: row.trust_tier as Merchant['trustTier'],
       description: (row.description as string) || undefined,
+      policies: typeof row.policies === 'string' ? JSON.parse(row.policies) : [],
+      deliveryRegions: typeof row.delivery_regions === 'string' ? JSON.parse(row.delivery_regions) : [],
+      paymentCapabilities: typeof row.payment_capabilities === 'string' ? JSON.parse(row.payment_capabilities) : [],
+      businessRules: typeof row.business_rules === 'string' ? JSON.parse(row.business_rules) : {},
       createdAt: row.created_at as string,
     });
   }
@@ -214,6 +227,8 @@ function rowToProduct(row: Record<string, unknown>): Product {
     attributes: typeof row.attributes === 'string' ? JSON.parse(row.attributes) : {},
     tags: typeof row.tags === 'string' ? JSON.parse(row.tags) : [],
     imageUrl: (row.image_url as string) || undefined,
+    availability: (row.availability as Product['availability']) || 'IN_STOCK',
+    offerEligibility: typeof row.offer_eligibility === 'string' ? JSON.parse(row.offer_eligibility) : [],
     createdAt: row.created_at as string,
   };
 }

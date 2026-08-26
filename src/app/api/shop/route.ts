@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db/connection';
 import { createTransaction, transitionTransaction } from '@/services/transaction';
 import { createAuditEvent } from '@/audit/logger';
-import { searchProducts, getProductById } from '@/services/catalog';
+import { searchProducts, getProductById, getMerchantById } from '@/services/catalog';
 import { parseIntentToSearchParams } from '@/agents/discovery';
 import { rankProducts, HallucinatedProductError } from '@/agents/decision';
 import { LLMValidationError, LLMConnectionError } from '@/services/llm';
 import { evaluatePolicy, DEFAULT_POLICY_CONFIG } from '@/engine/policy-engine';
-import type { Product } from '@/types/schemas';
+import type { Product, Merchant } from '@/types/schemas';
 
 /**
  * POST /api/shop — Unified AI shopping pipeline
@@ -45,6 +45,17 @@ export async function POST(request: NextRequest) {
 
     // ── Step 1: Create transaction ──
     const txn = createTransaction(db, { intentRaw: trimmedQuery, idempotencyKey });
+
+    if (txn.state !== 'CREATED') {
+      return NextResponse.json(
+        { 
+          error: 'Transaction already processed for this idempotency key', 
+          transactionId: txn.id, 
+          state: txn.state 
+        },
+        { status: 409 }
+      );
+    }
 
     createAuditEvent(db, {
       transactionId: txn.id,
@@ -127,7 +138,15 @@ export async function POST(request: NextRequest) {
       metadata: { candidateCount: products.length },
     });
 
-    const ranking = await rankProducts(intent, products);
+    const merchants: Record<string, Merchant> = {};
+    for (const product of products) {
+      if (!merchants[product.merchantId]) {
+        const m = getMerchantById(db, product.merchantId);
+        if (m) merchants[product.merchantId] = m;
+      }
+    }
+
+    const ranking = await rankProducts(intent, products, merchants);
 
     // Verify selected product in database
     const selectedProduct = getProductById(db, ranking.selectedProductId);

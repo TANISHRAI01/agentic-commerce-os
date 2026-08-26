@@ -26,10 +26,11 @@
 | 4 — Razorpay Payment | ✅ Complete (`v0.4-payments` tag) |
 | 5 — Failure Handling | ✅ Complete |
 | 6 — Audit + Premium UX | ✅ Complete |
-| 7–9 — Stretch | 🔲 Not Started (only after 1–6 stable) |
+| 7 — AI-Readable Merchant Layer | ✅ Complete |
+| 8–9 — Stretch | 🔲 Not Started (only after 1–7 stable) |
 
-**Last completed phase:** 6
-**All mandatory phases (1–6) are complete.**
+**Last completed phase:** 7
+**All mandatory phases (1–6) and Phase 7 are complete.**
 
 ---
 
@@ -93,7 +94,19 @@ See `docs/AGENT_HANDOFF.md` for full details.
 - **CSS**: 350+ new lines covering demo cards, section cards, audit toggle, policy explanations, welcome glow.
 - **Tests**: All 238 tests passing. No backend changes in this phase.
 
-**Phases 7–9 are stretch goals.** Only start if 1–6 are stable.
+### Phase 7 — AI-Readable Merchant Layer ✅ Complete
+- **Schema Updates**: Added `policies`, `deliveryRegions`, `paymentCapabilities`, `businessRules` to `MerchantSchema`. Added `availability` and `offerEligibility` to `ProductSchema`.
+- **Database Schema**: Recreated `commerce.db` with new columns storing JSON strings for arrays and objects.
+- **API Routes**: Built structured, predictable RESTful APIs under `/api/merchants`:
+  - `GET /api/merchants` — Catalog discovery
+  - `GET /api/merchants/[merchantId]` — Merchant metadata
+  - `GET /api/merchants/[merchantId]/catalog` — Product lookup
+  - `GET /api/merchants/[merchantId]/inventory/[productId]` — Inventory & availability
+  - `GET /api/merchants/[merchantId]/offers` — Eligible offers
+- **Buyer Integration**: Updated `src/app/api/shop/route.ts` to fetch merchant details. Enriched `Decision Agent` prompt (`src/agents/decision.ts`) with new product and merchant metadata, enabling AI comparison across "Merchant, Product, Price, Delivery, Trust, Offer".
+- **Tests**: All tests passing.
+
+**Phases 8–9 are stretch goals.** Only start if 1–7 are stable.
 
 ---
 
