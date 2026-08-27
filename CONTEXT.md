@@ -175,7 +175,7 @@ See `docs/AGENT_HANDOFF.md` for full details.
 - Unified `/api/shop` endpoint (not multi-step client calls)
 - Candidate-only ranking (LLM never sees full catalog, only filtered results)
 - Mocked LLM for tests (no API key needed to run tests)
-- `gemini-1.5-flash` model (fast, cheap, sufficient for structured extraction)
+- `gemini-2.0-flash` model (fast, cheap, sufficient for structured extraction)
 
 ---
 

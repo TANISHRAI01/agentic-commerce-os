@@ -30,7 +30,7 @@ export class LLMConnectionError extends Error {
 // ── Configuration ────────────────────────────────────────────
 
 const MAX_RETRIES = 2;
-const MODEL_NAME = 'gemini-3.5-flash';
+const MODEL_NAME = 'gemini-3.6-flash';
 
 // ── Singleton Client ─────────────────────────────────────────
 
