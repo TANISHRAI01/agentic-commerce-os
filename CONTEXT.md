@@ -27,11 +27,11 @@
 | 5 — Failure Handling | ✅ Complete |
 | 6 — Audit + Premium UX | ✅ Complete |
 | 7 — AI-Readable Merchant Layer | ✅ Complete |
-| 8 — Merchant AI + Growth | ✅ Complete |
-| 9 — Stretch | 🔲 Not Started |
+| 8 — Merchant AI + Growth | ✅ Complete (tagged `v0.8-growth`) |
+| 9 — Agent-to-Agent Commerce | ✅ Complete |
 
-**Last completed phase:** 8
-**All mandatory phases (1–6) and Phases 7–8 are complete.**
+**Last completed phase:** 9
+**All phases (1–9) complete. System is demo-ready.**
 
 ---
 
@@ -116,9 +116,25 @@ See `docs/AGENT_HANDOFF.md` for full details.
 - **Tests**: 40 new tests (10 merchant-agent, 30 growth-intelligence). **Total: 278 tests passing.**
 - **Guardrails**: Payment amount never touched by Merchant Agent. `isOptional: true` enforced at Zod schema level. All LLM output post-validated. Errors in Merchant Agent are non-fatal — shop flow always continues.
 
-**Phase 9 is a stretch goal.**
+### Phase 9 — Agent-to-Agent Commerce ✅ Complete
+- **Negotiation Types** (`src/types/negotiation.ts`): Full Zod schema protocol — `BuyerOffer`, `MerchantOffer`, `BuyerCounter`, `MerchantFinal`, `NegotiationRound`, `NegotiationResult`, `NegotiationOutcome` (DEAL/NO_DEAL/SKIPPED).
+- **Negotiation Agent** (`src/agents/negotiation.ts`): Bounded 2-round Buyer ↔ Merchant negotiation loop. `BuyerNegotiationAgent` and `MerchantNegotiationAgent` are LLM-powered. Server-side price clamp enforces `merchant.businessRules.maxDiscountPercent` cap regardless of LLM output. Non-fatal — pipeline always continues.
+- **State Machine**: Added `NEGOTIATING` state. Transitions: `CART_READY → NEGOTIATING → CART_READY` (with `negotiatedPrice` stored).
+- **Database**: Added `negotiated_price`, `negotiation_rounds`, `negotiation_log` columns with additive migration.
+- **API Route** (`POST /api/negotiate`): Guards: transaction must be CART_READY, product must exist in DB, merchant must have `businessRules`. Runs negotiation, emits 4 audit events, stores result.
+- **Checkout** (`/api/checkout`): Uses `negotiatedPrice` if set and strictly less than DB price (guards against markup).
+- **UI**: `NegotiationPanel.tsx` — animated Buyer/Merchant chat bubbles, deal badge, savings summary. Shown in `ChatMessage` after product selection. `page.tsx` calls `/api/negotiate` after `/api/shop`.
+- **Tests**: 11 new tests (SKIPPED outcome, Round 1 deal, server clamp, Round 2, schema validation, state machine). **Total: 289 tests passing.**
+- **Guardrails**: `negotiatedPrice` can never exceed `product.price` (enforced in checkout). Merchant Agent failures are non-fatal. Discount cap enforced server-side, not trusted from LLM.
+
+**Phase 9 is the final stretch phase. All 9 phases are complete.**
 
 ---
+
+## What To Do Next
+
+*All phases complete. The system is demo-ready.*
+
 
 ## Key Architecture Rules (Do NOT Violate)
 
@@ -175,7 +191,7 @@ See `docs/AGENT_HANDOFF.md` for full details.
 
 ```bash
 npm run dev      # Start dev server (localhost:3000)
-npm test         # Run all tests (278 passing)
+npm test         # Run all tests (289 passing)
 npm run seed     # Seed the database with 60 products
 npm run build    # Build for production
 
@@ -188,9 +204,15 @@ npm run build    # Build for production
 # 1. npm run dev
 # 2. Click "📊 Dashboard" tab in header
 # 3. Browse Top Products, Upsell, Cross-sell, Abandoned, Campaigns tabs
+
+# Phase 9 — Demo Negotiation:
+# 1. npm run dev
+# 2. Type: "Find me noise-cancelling headphones under ₹8,000"
+# 3. Watch the NegotiationPanel animate after product selection
+# 4. Audit trail shows: NEGOTIATION_STARTED → NEGOTIATION_ROUND → NEGOTIATION_COMPLETE
 ```
 
 ---
 
-*Last updated: Phase 8 completion*
+*Last updated: Phase 9 completion — all phases complete.*
 *Update this file at the end of every phase.*

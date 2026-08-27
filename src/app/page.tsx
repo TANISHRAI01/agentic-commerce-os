@@ -75,12 +75,32 @@ export default function Home() {
         };
         setMessages(prev => [...prev, errorMessage]);
       } else {
+        let negotiationResult = null;
+
+        // ── Phase 9: Run negotiation if a product was selected ──
+        if (data.transactionId && data.selectedProduct) {
+          try {
+            const negResponse = await fetch('/api/negotiate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ transactionId: data.transactionId }),
+            });
+            if (negResponse.ok) {
+              const negData = await negResponse.json();
+              negotiationResult = negData.negotiationResult ?? null;
+            }
+          } catch {
+            // Negotiation is non-fatal — shop continues without it
+            console.warn('Negotiation call failed, continuing without negotiation result');
+          }
+        }
+
         const aiMessage: Message = {
           id: `ai-${Date.now()}`,
           type: 'ai',
           content: data.message || 'Here are the results:',
           timestamp: new Date().toLocaleTimeString(),
-          shopResult: data,
+          shopResult: { ...data, negotiationResult },
         };
         setMessages(prev => [...prev, aiMessage]);
       }
@@ -96,6 +116,7 @@ export default function Home() {
       setIsLoading(false);
       inputRef.current?.focus();
     }
+
   };
 
   const handleSuggestion = (suggestion: string) => {

@@ -106,16 +106,26 @@ export async function POST(request: NextRequest) {
         metadata: { existingOrderId: txn.razorpayOrderId },
       });
 
+      // Re-apply negotiation price logic (same guard as primary path)
+      // This keeps the returned amount consistent even on duplicate calls
+      const product = txn.selectedProductId ? getProductById(db, txn.selectedProductId) : null;
+      const dbPriceForDup = product?.price ?? txn.selectedProductPrice ?? 0;
+      const dupPrice =
+        txn.negotiatedPrice !== undefined && txn.negotiatedPrice > 0 && txn.negotiatedPrice < dbPriceForDup
+          ? txn.negotiatedPrice
+          : dbPriceForDup;
+
       return NextResponse.json({
         success: true,
         transactionId,
         razorpayOrderId: txn.razorpayOrderId,
         razorpayKeyId: getRazorpayKeyId(),
-        amount: (txn.selectedProductPrice ?? 0) * 100,  // paise
+        amount: Math.round(dupPrice * 100),  // paise — negotiated-aware
         currency: 'INR',
         productName: txn.selectedProductName,
         duplicate: true,
       });
+
     }
 
     // ── Guard 3: Policy must have passed ──
@@ -142,8 +152,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use the DB price, NOT any frontend-supplied price
-    const priceInRupees = product.price;
+    // Use negotiatedPrice if set by Phase 9 negotiation — but ONLY if it's less than DB price
+    // (safety guard: negotiation can only create discounts, never markups)
+    const dbPrice = product.price;
+    const priceInRupees =
+      txn.negotiatedPrice !== undefined && txn.negotiatedPrice > 0 && txn.negotiatedPrice < dbPrice
+        ? txn.negotiatedPrice
+        : dbPrice;
     const amountInPaise = Math.round(priceInRupees * 100);
 
     // ── Guard 6: Currency check ──
@@ -154,6 +169,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+
     // ── Create Razorpay order ──
     const order = await createRazorpayOrder(amountInPaise, 'INR', transactionId);
 
@@ -163,18 +179,24 @@ export async function POST(request: NextRequest) {
     });
 
     // ── Audit ──
+    const wasNegotiated = txn.negotiatedPrice !== undefined && txn.negotiatedPrice < dbPrice;
     createAuditEvent(db, {
       transactionId,
       event: 'ORDER_CREATED',
       result: 'SUCCESS',
-      reason: `Razorpay order created: ${order.orderId} for ₹${priceInRupees}`,
+      reason: wasNegotiated
+        ? `Razorpay order created: ${order.orderId} for ₹${priceInRupees} (negotiated from ₹${dbPrice})`
+        : `Razorpay order created: ${order.orderId} for ₹${priceInRupees}`,
       metadata: {
         razorpayOrderId: order.orderId,
         amountInPaise,
         currency: 'INR',
         productId: product.id,
         productName: product.name,
-        productPrice: priceInRupees,
+        originalPrice: dbPrice,
+        finalPrice: priceInRupees,
+        wasNegotiated,
+        savingsAmount: wasNegotiated ? dbPrice - priceInRupees : 0,
       },
     });
 
@@ -187,6 +209,8 @@ export async function POST(request: NextRequest) {
       currency: 'INR',
       productName: product.name,
       productPrice: priceInRupees,
+      originalPrice: dbPrice,
+      wasNegotiated,
     });
   } catch (error) {
     if (error instanceof RazorpayConfigError) {

@@ -13,7 +13,8 @@ const VALID_TRANSITIONS: Record<TransactionState, TransactionState[]> = {
   CREATED:           ['DISCOVERY', 'CANCELLED'],
   DISCOVERY:         ['DECISION', 'CANCELLED'],
   DECISION:          ['CART_READY', 'CANCELLED'],
-  CART_READY:        ['POLICY_PENDING', 'CANCELLED'],
+  CART_READY:        ['NEGOTIATING', 'POLICY_PENDING', 'CANCELLED'],
+  NEGOTIATING:       ['CART_READY', 'CANCELLED'],  // Phase 9: resolves back to CART_READY with negotiatedPrice set
   POLICY_PENDING:    ['POLICY_FAIL', 'APPROVAL_REQUIRED', 'AUTO_APPROVED'],
   POLICY_FAIL:       ['BLOCKED'],
   APPROVAL_REQUIRED: ['APPROVED', 'CANCELLED', 'BLOCKED'],

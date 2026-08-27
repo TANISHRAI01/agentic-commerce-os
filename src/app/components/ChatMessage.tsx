@@ -9,6 +9,8 @@ import CheckoutButton from './CheckoutButton';
 import PaymentReceipt from './PaymentReceipt';
 import IncidentTimeline from './IncidentTimeline';
 import MerchantRecommendations from './MerchantRecommendations';
+import NegotiationPanel from './NegotiationPanel';
+import type { NegotiationResult } from '@/types/negotiation';
 
 interface PolicyCheck {
   name: string;
@@ -129,6 +131,7 @@ interface ChatMessageProps {
       } | null;
       summary: string;
     } | null;
+    negotiationResult?: NegotiationResult | null;
   };
 }
 
@@ -266,6 +269,14 @@ export default function ChatMessage({ type, content, timestamp, shopResult }: Ch
           <ProductCard
             product={shopResult.selectedProduct}
             isRecommended={true}
+          />
+        )}
+
+        {/* ── Negotiation Panel (Phase 9) ── */}
+        {shopResult?.negotiationResult && shopResult.selectedProduct && (
+          <NegotiationPanel
+            negotiationResult={shopResult.negotiationResult}
+            productName={shopResult.selectedProduct.name}
           />
         )}
 

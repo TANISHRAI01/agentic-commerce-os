@@ -64,7 +64,7 @@ export function transitionTransaction(
   updates?: Partial<Pick<Transaction,
     'selectedProductId' | 'selectedProductName' | 'selectedProductPrice' |
     'policyResult' | 'approvalStatus' | 'razorpayOrderId' | 'razorpayPaymentId' |
-    'failureReason' | 'intentId'
+    'failureReason' | 'intentId' | 'negotiatedPrice' | 'negotiationRounds' | 'negotiationLog'
   >>,
 ): Transaction {
   const txn = getTransaction(db, transactionId);
@@ -117,6 +117,18 @@ export function transitionTransaction(
     setClauses.push('intent_id = ?');
     values.push(updates.intentId);
   }
+  if (updates?.negotiatedPrice !== undefined) {
+    setClauses.push('negotiated_price = ?');
+    values.push(updates.negotiatedPrice);
+  }
+  if (updates?.negotiationRounds !== undefined) {
+    setClauses.push('negotiation_rounds = ?');
+    values.push(updates.negotiationRounds);
+  }
+  if (updates?.negotiationLog !== undefined) {
+    setClauses.push('negotiation_log = ?');
+    values.push(updates.negotiationLog);
+  }
 
   values.push(transactionId, txn.state);
 
@@ -151,8 +163,9 @@ export function getTransaction(
 ): Transaction | null {
   const stmt = db.prepare(
     `SELECT id, state, intent_id, intent_raw, selected_product_id,
-            selected_product_name, selected_product_price, policy_result,
-            approval_status, razorpay_order_id, razorpay_payment_id,
+            selected_product_name, selected_product_price,
+            negotiated_price, negotiation_rounds, negotiation_log,
+            policy_result, approval_status, razorpay_order_id, razorpay_payment_id,
             idempotency_key, failure_reason, created_at, updated_at
      FROM transactions WHERE id = ?`,
   );
@@ -178,8 +191,9 @@ export function getTransactionByIdempotencyKey(
 ): Transaction | null {
   const stmt = db.prepare(
     `SELECT id, state, intent_id, intent_raw, selected_product_id,
-            selected_product_name, selected_product_price, policy_result,
-            approval_status, razorpay_order_id, razorpay_payment_id,
+            selected_product_name, selected_product_price,
+            negotiated_price, negotiation_rounds, negotiation_log,
+            policy_result, approval_status, razorpay_order_id, razorpay_payment_id,
             idempotency_key, failure_reason, created_at, updated_at
      FROM transactions WHERE idempotency_key = ?`,
   );
@@ -207,6 +221,9 @@ function rowToTransaction(row: Record<string, unknown>): Transaction {
     selectedProductId: (row.selected_product_id as string) || undefined,
     selectedProductName: (row.selected_product_name as string) || undefined,
     selectedProductPrice: row.selected_product_price as number | undefined,
+    negotiatedPrice: row.negotiated_price as number | undefined,
+    negotiationRounds: row.negotiation_rounds as number | undefined,
+    negotiationLog: (row.negotiation_log as string) || undefined,
     policyResult: row.policy_result ? JSON.parse(row.policy_result as string) as PolicyResult : undefined,
     approvalStatus: (row.approval_status as Transaction['approvalStatus']) || undefined,
     razorpayOrderId: (row.razorpay_order_id as string) || undefined,

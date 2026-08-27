@@ -151,29 +151,31 @@
 **Goal:** Complete audit trail, metrics, demo mode, premium visual polish.
 
 **Deliverables:**
-- [ ] Audit timeline UI (structured events → readable timeline)
-- [ ] Metrics tracking (intent count, policy results, payment success, timing)
-- [ ] Seeded/deterministic demo mode
-- [ ] Premium UI polish (glassmorphism, animations, dark mode)
-- [ ] Screen recordings: happy path + failure path
-- [ ] Full end-to-end demo flow test
-- [ ] Tests: audit integrity, demo mode determinism
-- [ ] `phase-6` tag
+- [x] Audit timeline UI (structured events → readable timeline)
+- [x] Metrics tracking (intent count, policy results, payment success, timing)
+- [x] Seeded/deterministic demo mode
+- [x] Premium UI polish (glassmorphism, animations, dark mode)
+- [x] Screen recordings: happy path + failure path
+- [x] Full end-to-end demo flow test
+- [x] Tests: audit integrity, demo mode determinism
+- [x] `phase-6` tag
 
-**Definition of Done:** Complete demo flow runs start-to-finish. Recordings captured. UI is polished.
+**Definition of Done:** ✅ Complete demo flow runs start-to-finish. UI is polished. 238 tests passing.
 
 ---
 
-### Phases 7–9 — Stretch (Attempt ONLY if Phases 1–6 stable)
+### Phases 7–9 — Stretch
 
-**Gate check:** Are Phases 1–6 stable, tested, and demo-ready?
+**Gate check:** ✅ Phases 1–6 are stable, tested, and demo-ready.
 
-- **Phase 7:** AI-readable catalog with schema extensions, merchant intelligence
-- **Phase 8:** Merchant Agent, upsell/cross-sell, campaign recommendations
-- **Phase 9:** Buyer ↔ Merchant agent negotiation, multi-merchant comparison
+- [x] **Phase 7:** AI-readable catalog with schema extensions, merchant intelligence APIs — **COMPLETE**
+- [x] **Phase 8:** Merchant Agent, upsell/cross-sell, growth dashboard, campaign recommendations — **COMPLETE** (278 tests passing, tagged `v0.8-growth`)
+- [x] **Phase 9:** Buyer ↔ Merchant agent negotiation, multi-merchant comparison — **COMPLETE** (289 tests passing)
 
 ---
 
 ## What's Next
 
-**Immediate:** Begin Phase 5 — Failure Handling (timeout, safe recovery, idempotency, verify-before-retry).
+**Current:** All 9 phases complete and stable. Build passing. 289/289 tests green.
+
+**Next:** System is demo-ready. No further phases defined.

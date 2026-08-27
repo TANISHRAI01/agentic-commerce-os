@@ -3195,3 +3195,230 @@ body {
   color: var(--error);
 }
 
+/* ============================================================
+   Phase 9 — Negotiation Panel
+   ============================================================ */
+
+.negotiation-panel {
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 14px;
+  margin: 12px 0;
+  overflow: hidden;
+  animation: slideIn 0.3s ease;
+}
+
+.negotiation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.negotiation-header:hover {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.negotiation-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.negotiation-icon {
+  font-size: 20px;
+}
+
+.negotiation-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.negotiation-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.negotiation-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.neg-savings-badge {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: var(--success);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.neg-outcome-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.neg-outcome-deal {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  color: var(--success);
+}
+
+.neg-outcome-nodeal {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: var(--warning);
+}
+
+.neg-outcome-skipped {
+  background: rgba(107, 114, 128, 0.1);
+  border: 1px solid rgba(107, 114, 128, 0.25);
+  color: var(--text-secondary);
+}
+
+.neg-toggle {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.negotiation-body {
+  padding: 0 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.neg-skip-msg {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 12px;
+  background: rgba(107, 114, 128, 0.08);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.neg-round {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.neg-round-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0 4px;
+}
+
+.neg-bubble {
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: fadeIn 0.25s ease;
+}
+
+.neg-bubble-buyer {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  margin-right: 24px;
+}
+
+.neg-bubble-merchant {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  margin-left: 24px;
+}
+
+.neg-bubble-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.neg-avatar {
+  font-size: 16px;
+}
+
+.neg-agent-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.neg-price-tag {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.06);
+  color: var(--text-primary);
+}
+
+.neg-price-deal {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--success);
+}
+
+.neg-bubble-msg {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Summary section */
+.neg-summary {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.neg-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.neg-summary-final {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.neg-price-struck {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.neg-price-final {
+  color: var(--success);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.neg-summary-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding-top: 4px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}

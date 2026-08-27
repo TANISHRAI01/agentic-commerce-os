@@ -151,6 +151,7 @@ export const TransactionState = z.enum([
   'DISCOVERY',
   'DECISION',
   'CART_READY',
+  'NEGOTIATING',        // Phase 9 — bounded agent negotiation in progress
   'POLICY_PENDING',
   'POLICY_FAIL',
   'APPROVAL_REQUIRED',
@@ -178,6 +179,9 @@ export const TransactionSchema = z.object({
   selectedProductId: z.string().optional(),
   selectedProductName: z.string().optional(),
   selectedProductPrice: z.number().optional(),
+  negotiatedPrice: z.number().optional(),        // Phase 9: server-clamped negotiated price
+  negotiationRounds: z.number().int().optional(), // Phase 9: number of rounds completed
+  negotiationLog: z.string().optional(),          // Phase 9: JSON array of NegotiationRound[]
   policyResult: PolicyResultSchema.optional(),
   approvalStatus: ApprovalStatus.optional(),
   razorpayOrderId: z.string().optional(),
@@ -244,6 +248,10 @@ export const AuditEventType = z.enum([
   'TRANSACTION_FAILED',
   'MERCHANT_AGENT_STARTED',
   'MERCHANT_AGENT_COMPLETE',
+  'NEGOTIATION_STARTED',    // Phase 9
+  'NEGOTIATION_ROUND',      // Phase 9: one round of buyer↔merchant exchange
+  'NEGOTIATION_COMPLETE',   // Phase 9: deal reached or no deal
+  'NEGOTIATION_SKIPPED',    // Phase 9: merchant has no discount capability
   'STATE_TRANSITION',
 ]);
 export type AuditEventType = z.infer<typeof AuditEventType>;

@@ -122,6 +122,9 @@ function initSchema(database: SqlJsDatabase): void {
       selected_product_id TEXT,
       selected_product_name TEXT,
       selected_product_price REAL,
+      negotiated_price REAL,
+      negotiation_rounds INTEGER DEFAULT 0,
+      negotiation_log TEXT,
       policy_result TEXT,
       approval_status TEXT,
       razorpay_order_id TEXT,
@@ -132,6 +135,12 @@ function initSchema(database: SqlJsDatabase): void {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
+
+  // Additive migration: add columns if they don't exist yet (safe on existing DBs)
+  try { database.run(`ALTER TABLE transactions ADD COLUMN negotiated_price REAL`); } catch {}
+  try { database.run(`ALTER TABLE transactions ADD COLUMN negotiation_rounds INTEGER DEFAULT 0`); } catch {}
+  try { database.run(`ALTER TABLE transactions ADD COLUMN negotiation_log TEXT`); } catch {}
+
 
   database.run(`
     CREATE TABLE IF NOT EXISTS audit_events (

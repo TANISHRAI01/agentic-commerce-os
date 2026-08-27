@@ -178,6 +178,10 @@ export async function POST(request: NextRequest) {
       razorpayPaymentId: razorpay_payment_id,
     });
 
+    const finalPrice = txn.negotiatedPrice !== undefined && txn.negotiatedPrice > 0 && txn.negotiatedPrice < (txn.selectedProductPrice ?? 0)
+      ? txn.negotiatedPrice
+      : (txn.selectedProductPrice ?? 0);
+
     createAuditEvent(db, {
       transactionId,
       event: 'PAYMENT_VERIFIED',
@@ -187,7 +191,7 @@ export async function POST(request: NextRequest) {
         razorpay_order_id,
         razorpay_payment_id,
         productName: txn.selectedProductName,
-        amount: txn.selectedProductPrice,
+        amount: finalPrice,
       },
     });
 
@@ -199,12 +203,12 @@ export async function POST(request: NextRequest) {
       transactionId,
       event: 'TRANSACTION_COMPLETE',
       result: 'SUCCESS',
-      reason: `Transaction completed. Product: ${txn.selectedProductName}, Amount: ₹${txn.selectedProductPrice}`,
+      reason: `Transaction completed. Product: ${txn.selectedProductName}, Amount: ₹${finalPrice}`,
       metadata: {
         razorpay_payment_id,
         razorpay_order_id,
         productName: txn.selectedProductName,
-        productPrice: txn.selectedProductPrice,
+        productPrice: finalPrice,
       },
     });
 
