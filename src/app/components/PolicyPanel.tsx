@@ -29,13 +29,6 @@ const CHECK_LABELS: Record<string, string> = {
   CURRENCY_MATCH: 'Currency',
 };
 
-const CHECK_ICONS: Record<string, string> = {
-  BUDGET_CHECK: '💰',
-  AGENT_SPENDING_LIMIT: '🤖',
-  MERCHANT_TRUST: '🏪',
-  CURRENCY_MATCH: '💱',
-};
-
 function formatLimit(name: string, details: { actual: number | string; limit: number | string }): string {
   if (name === 'BUDGET_CHECK' || name === 'AGENT_SPENDING_LIMIT') {
     return `₹${Number(details.limit).toLocaleString('en-IN')}`;
@@ -46,10 +39,6 @@ function formatLimit(name: string, details: { actual: number | string; limit: nu
   return String(details.limit);
 }
 
-/**
- * Generate a plain-language explanation from policy check data.
- * No LLM involvement — purely deterministic string construction.
- */
 function getSimpleExplanation(
   policyResult: PolicyPanelProps['policyResult'],
   transactionState: string,
@@ -82,14 +71,13 @@ function getSimpleExplanation(
     return `This purchase needs your approval because it costs ₹${actual.toLocaleString('en-IN')}, which is above the auto-approval threshold.`;
   }
 
-  // All pass, auto-approved
   const agentCheck = policyResult.checks.find(c => c.name === 'AGENT_SPENDING_LIMIT');
   const budgetCheck = policyResult.checks.find(c => c.name === 'BUDGET_CHECK');
   const actual = agentCheck ? Number(agentCheck.details.actual) : 0;
   const agentLimit = agentCheck ? Number(agentCheck.details.limit) : 0;
   const budget = budgetCheck ? Number(budgetCheck.details.limit) : 0;
 
-  return `Purchase allowed because the product costs ₹${actual.toLocaleString('en-IN')} and your limits are ₹${budget.toLocaleString('en-IN')} (budget) and ₹${agentLimit.toLocaleString('en-IN')} (agent).`;
+  return `Within budget (₹${budget.toLocaleString('en-IN')}) and agent limit (₹${agentLimit.toLocaleString('en-IN')}).`;
 }
 
 export default function PolicyPanel({ policyResult, transactionState }: PolicyPanelProps) {
@@ -97,67 +85,54 @@ export default function PolicyPanel({ policyResult, transactionState }: PolicyPa
   const isApproved = transactionState === 'APPROVED' || transactionState === 'AUTO_APPROVED';
   const isWaiting = transactionState === 'APPROVAL_REQUIRED';
 
-  return (
-    <div className={`policy-panel ${isBlocked ? 'policy-panel-blocked' : ''}`}>
-      <div className="policy-header">
-        <span className="policy-title">🛡️ Policy Checks</span>
-        <span className={`policy-overall-badge ${policyResult.overall === 'PASS' ? 'badge-pass' : 'badge-fail'}`}>
-          {policyResult.overall}
-        </span>
+  if (policyResult.overall === 'PASS' && !policyResult.requiresApproval) {
+    return (
+      <div className="rounded-xl border border-[#1b4d3e]/30 bg-[#0a1a15]/40 flex items-center p-3 gap-3">
+        <span className="material-symbols-outlined text-[#4ade80]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+        <p className="font-body-main text-body-main text-[#4ade80] text-sm">
+          {getSimpleExplanation(policyResult, transactionState)}
+        </p>
       </div>
+    );
+  }
 
-      {/* Simple explanation */}
-      <div className={`policy-simple-explanation ${policyResult.overall === 'PASS' ? 'policy-explanation-pass' : 'policy-explanation-fail'}`}>
-        {getSimpleExplanation(policyResult, transactionState)}
+  if (isBlocked || policyResult.overall === 'FAIL') {
+    return (
+      <div className="rounded-xl border border-error/30 bg-[#351000]/40 flex items-start p-4 gap-3">
+        <span className="material-symbols-outlined text-error mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>block</span>
+        <div>
+          <p className="font-headline-sm text-error text-sm mb-1">Policy Check Failed</p>
+          <p className="font-body-main text-body-main text-error/80 text-sm">
+            {getSimpleExplanation(policyResult, transactionState)}
+          </p>
+        </div>
       </div>
+    );
+  }
 
-      <div className="policy-checks">
-        {policyResult.checks.map((check, i) => (
-          <div key={i} className="policy-check-row">
-            <span className="policy-check-icon">{CHECK_ICONS[check.name] || '📋'}</span>
-            <span className="policy-check-name">{CHECK_LABELS[check.name] || check.name}</span>
-            <span className="policy-check-limit">{formatLimit(check.name, check.details)}</span>
-            <span className={`policy-check-badge ${check.result === 'PASS' ? 'badge-pass' : 'badge-fail'}`}>
-              {check.result === 'PASS' ? '✓ PASS' : '✗ FAIL'}
-            </span>
+  if (policyResult.requiresApproval) {
+    return (
+      <div className="rounded-xl border border-secondary/30 bg-[#352500]/40 flex items-start p-4 gap-3">
+        <span className="material-symbols-outlined text-secondary mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>policy</span>
+        <div className="flex-1">
+          <p className="font-headline-sm text-secondary text-sm mb-1">Approval Required</p>
+          <p className="font-body-main text-body-main text-secondary/80 text-sm mb-3">
+            {getSimpleExplanation(policyResult, transactionState)}
+          </p>
+          
+          <div className="bg-surface-container-lowest/50 rounded p-3">
+            <p className="font-label-micro text-label-micro text-on-surface-variant uppercase mb-2">Check Details</p>
+            {policyResult.checks.map((check, i) => (
+              <div key={i} className="flex justify-between items-center text-xs mb-1 last:mb-0">
+                <span className="text-on-surface-variant">{CHECK_LABELS[check.name] || check.name}</span>
+                <span className="text-on-surface font-tabular-data">{formatLimit(check.name, check.details)}</span>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
+    );
+  }
 
-      {/* Approval status row */}
-      {policyResult.overall === 'PASS' && (
-        <div className="policy-approval-row">
-          <span className="policy-check-icon">📝</span>
-          <span className="policy-check-name">Approval</span>
-          <span className="policy-check-limit">
-            {policyResult.requiresApproval ? 'Required' : 'Not required'}
-          </span>
-          <span className={`policy-check-badge ${
-            isApproved ? 'badge-pass' :
-            isWaiting ? 'badge-waiting' :
-            isBlocked ? 'badge-fail' :
-            'badge-waiting'
-          }`}>
-            {isApproved ? '✓ APPROVED' :
-             isWaiting ? '⏳ WAITING' :
-             isBlocked ? '✗ REJECTED' :
-             policyResult.requiresApproval ? '⏳ WAITING' : '✓ AUTO'}
-          </span>
-        </div>
-      )}
-
-      {/* Status message */}
-      {isBlocked && policyResult.overall === 'FAIL' && (
-        <div className="policy-status-blocked">
-          🚫 Transaction blocked — {policyResult.checks.filter(c => c.result === 'FAIL').map(c => c.reason).join('. ')}
-        </div>
-      )}
-
-      {isApproved && (
-        <div className="policy-status-approved">
-          ✅ Authorization Granted
-        </div>
-      )}
-    </div>
-  );
+  return null;
 }

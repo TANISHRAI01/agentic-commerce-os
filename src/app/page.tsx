@@ -90,7 +90,6 @@ export default function Home() {
               negotiationResult = negData.negotiationResult ?? null;
             }
           } catch {
-            // Negotiation is non-fatal — shop continues without it
             console.warn('Negotiation call failed, continuing without negotiation result');
           }
         }
@@ -116,7 +115,6 @@ export default function Home() {
       setIsLoading(false);
       inputRef.current?.focus();
     }
-
   };
 
   const handleSuggestion = (suggestion: string) => {
@@ -132,151 +130,126 @@ export default function Home() {
   const hasMessages = messages.length > 0;
 
   return (
-    <div className="page-container">
-      {/* Header */}
-      <header className="header">
-        <div className="header-brand">
-          <div className="header-logo">⚡</div>
-          <div>
-            <div className="header-title">Agentic Commerce OS</div>
-            <div className="header-subtitle">AI-Powered Shopping · Razorpay Buildathon 2026</div>
+    <div className="h-screen overflow-hidden flex bg-background text-on-surface">
+      {/* SideNavBar */}
+      <nav className="fixed left-0 top-0 h-full w-20 hover:w-64 transition-all duration-300 z-40 bg-surface-container-lowest/80 backdrop-blur-xl border-r border-outline-variant/10 shadow-lg flex flex-col py-stack_lg px-base_unit group">
+        <div className="flex items-center px-4 mb-8 overflow-hidden whitespace-nowrap">
+          <div className="w-10 h-10 rounded-full bg-surface-container flex-shrink-0 flex items-center justify-center border border-outline-variant/20 relative group-hover:mr-3 transition-all">
+            <span className="material-symbols-outlined text-primary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>terminal</span>
+          </div>
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+            <h2 className="font-headline-sm text-headline-sm text-on-surface">Agent Core</h2>
+            <p className="font-label-micro text-label-micro text-on-surface-variant uppercase">Autonomous Mode</p>
           </div>
         </div>
-        <div className="header-badges">
-          <div className="header-view-toggle">
-            <button
-              id="view-chat-btn"
-              className={`view-toggle-btn ${viewMode === 'chat' ? 'view-toggle-active' : ''}`}
-              onClick={() => setViewMode('chat')}
-            >
-              💬 Shop
-            </button>
-            <button
-              id="view-dashboard-btn"
-              className={`view-toggle-btn ${viewMode === 'dashboard' ? 'view-toggle-active' : ''}`}
-              onClick={() => setViewMode('dashboard')}
-            >
-              📊 Dashboard
-            </button>
-          </div>
-          <div className="header-status">
-            <span className="status-dot" />
-            <span>Live</span>
-          </div>
-          <div className="header-phase-badge">Phase 8 — Merchant AI</div>
-        </div>
-      </header>
-
-      {/* Demo Panel - only in chat mode */}
-      {viewMode === 'chat' && (
-        <DemoPanel onSelectScenario={handleDemoScenario} disabled={isLoading} />
-      )}
-
-      {/* Dashboard View */}
-      {viewMode === 'dashboard' && (
-        <main className="dashboard-main">
-          <MerchantDashboard />
-        </main>
-      )}
-
-      {/* Chat Area */}
-      {viewMode === 'chat' && (
-      <main className="chat-container">
-        <div className="chat-messages">
-          {!hasMessages && (
-            <div className="chat-welcome">
-              <div className="chat-welcome-glow" />
-              <div className="chat-welcome-icon">🛒</div>
-              <h2>What would you like to buy?</h2>
-              <p className="chat-welcome-subtitle">
-                Describe what you need in plain English. The AI will search the catalog,
-                recommend the best product, run policy checks, and process payment &mdash;
-                with every decision fully auditable.
-              </p>
-              <div className="chat-welcome-features">
-                <div className="welcome-feature">
-                  <span>🎯</span>
-                  <span>AI Recommendation</span>
-                </div>
-                <div className="welcome-feature">
-                  <span>🛡️</span>
-                  <span>Policy Engine</span>
-                </div>
-                <div className="welcome-feature">
-                  <span>💳</span>
-                  <span>Razorpay Checkout</span>
-                </div>
-                <div className="welcome-feature">
-                  <span>📋</span>
-                  <span>Full Audit Trail</span>
-                </div>
-              </div>
-              <div className="chat-suggestions">
-                {SUGGESTIONS.map((s, i) => (
-                  <button
-                    key={i}
-                    className="suggestion-chip"
-                    onClick={() => handleSuggestion(s)}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {messages.map((msg) => (
-            <ChatMessage
-              key={msg.id}
-              type={msg.type}
-              content={msg.content}
-              timestamp={msg.timestamp}
-              shopResult={msg.shopResult as any}
-            />
-          ))}
-
-          {isLoading && <LoadingState />}
-
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input */}
-        <form className="chat-input-area" onSubmit={handleSubmit}>
-          <input
-            ref={inputRef}
-            id="shopping-intent-input"
-            className="chat-input"
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={isLoading ? 'Processing your request...' : 'Describe what you want to buy...'}
-            autoComplete="off"
-            disabled={isLoading}
-          />
-          <button
-            id="send-intent-btn"
-            className="chat-send-btn"
-            type="submit"
-            disabled={!query.trim() || isLoading}
-          >
-            {isLoading ? (
-              <span className="btn-spinner" />
-            ) : (
-              'Search →'
-            )}
+        <div className="flex-1 flex flex-col gap-2 overflow-y-auto overflow-x-hidden px-2">
+          <button className="w-full flex items-center p-3 text-on-surface-variant hover:bg-surface-variant/50 transition-all ease-in-out rounded-xl whitespace-nowrap" onClick={() => setViewMode('chat')}>
+            <span className="material-symbols-outlined mr-4">history</span>
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">History</span>
           </button>
-        </form>
+          <button className="w-full flex items-center p-3 text-on-surface-variant hover:bg-surface-variant/50 transition-all ease-in-out rounded-xl whitespace-nowrap" onClick={() => setViewMode('dashboard')}>
+            <span className="material-symbols-outlined mr-4">analytics</span>
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">Analytics</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* Main Content Area */}
+      <main className="flex-1 ml-20 flex flex-col relative h-full">
+        {/* TopNavBar */}
+        <header className="fixed top-0 w-full z-50 bg-surface/40 backdrop-blur-md border-b border-outline-variant/20 flex justify-between items-center px-margin_mobile md:px-margin_desktop py-stack_md" style={{ width: 'calc(100% - 5rem)' }}>
+          <div className="flex items-center gap-6">
+            <h1 className="font-display-lg text-[24px] md:text-display-lg font-extrabold text-primary leading-none">Agentic OS</h1>
+            <nav className="hidden md:flex gap-6 ml-8">
+              <button 
+                onClick={() => setViewMode('dashboard')}
+                className={`transition-colors font-headline-sm text-headline-sm ${viewMode === 'dashboard' ? 'text-primary border-b-2 border-primary pb-1' : 'text-on-surface-variant hover:text-primary'}`}>
+                Dashboard
+              </button>
+              <button 
+                onClick={() => setViewMode('chat')}
+                className={`transition-colors font-headline-sm text-headline-sm ${viewMode === 'chat' ? 'text-primary border-b-2 border-primary pb-1' : 'text-on-surface-variant hover:text-primary'}`}>
+                Chat
+              </button>
+            </nav>
+          </div>
+          <div className="flex items-center gap-4 hidden md:flex">
+             <div className="header-phase-badge font-label-micro text-label-micro text-on-surface-variant uppercase border border-outline-variant/30 px-3 py-1 rounded-full">Phase 9 — Complete</div>
+          </div>
+        </header>
+
+        {viewMode === 'chat' && (
+          <div className="flex-1 pt-24 pb-32 overflow-y-auto flex justify-center w-full relative z-10 custom-scrollbar">
+            <div className="w-full max-w-[720px] px-margin_mobile md:px-0 flex flex-col gap-8">
+              {!hasMessages && (
+                <div className="text-center mt-12 mb-8">
+                   <h2 className="custom-display-hero text-on-background mb-stack_lg text-[48px] leading-tight">Your AI Does the Shopping.</h2>
+                   <p className="font-body-main text-[20px] text-secondary mb-12">Intent → Negotiation → Checkout. Fully autonomous.</p>
+                   
+                   <DemoPanel onSelectScenario={handleDemoScenario} disabled={isLoading} />
+                   
+                   <div className="flex flex-wrap justify-center gap-stack_sm mt-8">
+                    {SUGGESTIONS.slice(0,3).map((s, i) => (
+                      <div key={i} onClick={() => handleSuggestion(s)} className="flex items-center px-4 py-2 rounded-full border border-outline-variant/30 bg-surface-container-high/40 backdrop-blur-md cursor-pointer hover:bg-surface-variant/60 transition-colors">
+                        <span className="font-label-micro text-label-micro text-on-surface-variant">{s}</span>
+                      </div>
+                    ))}
+                   </div>
+                </div>
+              )}
+
+              {messages.map((msg) => (
+                <ChatMessage
+                  key={msg.id}
+                  type={msg.type}
+                  content={msg.content}
+                  timestamp={msg.timestamp}
+                  shopResult={msg.shopResult as any}
+                />
+              ))}
+              
+              {isLoading && <LoadingState />}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Bottom Input Form */}
+            <form onSubmit={handleSubmit} className="fixed bottom-stack_lg left-1/2 -translate-x-1/2 w-full max-w-[720px] px-margin_mobile md:px-0 z-50 ml-10 md:ml-10">
+              <div className="bg-surface-container/40 backdrop-blur-xl border border-white/10 shadow-xl rounded-full flex items-center p-2 pl-6 focus-within:border-primary/50 focus-within:bg-surface-container/60 transition-all duration-300">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  disabled={isLoading}
+                  placeholder={isLoading ? 'Processing...' : 'Instruct agent...'}
+                  className="flex-1 bg-transparent border-none text-on-surface font-body-main text-[16px] focus:ring-0 placeholder:text-on-surface-variant/50 h-10 outline-none"
+                />
+                <div className="flex items-center gap-2 ml-4">
+                  <button type="submit" disabled={!query.trim() || isLoading} className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${!query.trim() || isLoading ? 'bg-surface-variant text-on-surface-variant' : 'bg-primary-container text-on-primary-container hover:bg-primary ai-pulse'}`}>
+                    <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>arrow_upward</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {viewMode === 'dashboard' && (
+          <div className="flex-1 pt-24 overflow-y-auto px-margin_mobile md:px-margin_desktop pb-12 w-full z-10 custom-scrollbar">
+            <MerchantDashboard />
+          </div>
+        )}
       </main>
-      )}  {/* end chat view */}
 
-
-      {/* Footer */}
-      <footer className="footer">
-        Razorpay AI Buildathon 2026 · Track 01 — AI Growth &amp; Agentic Commerce ·{' '}
-        <a href="https://github.com/TANISHRAI01/agentic-commerce-os" target="_blank" rel="noopener">
-          GitHub
-        </a>
-      </footer>
+      {/* Footer Status */}
+      <div className="fixed bottom-4 right-4 z-50 hidden md:flex items-center space-x-stack_md px-stack_md py-base_unit bg-surface-container-high/40 backdrop-blur-sm rounded-full border border-outline-variant/20">
+        <span className="font-tabular-data text-tabular-data text-on-surface-variant text-xs">OS v1.0.4 - System Secure</span>
+        <div className="w-px h-3 bg-outline-variant/50"></div>
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 rounded-full bg-[#4ade80]"></div>
+          <span className="font-tabular-data text-tabular-data text-on-surface-variant text-xs">Razorpay Mode Active</span>
+        </div>
+      </div>
     </div>
   );
 }

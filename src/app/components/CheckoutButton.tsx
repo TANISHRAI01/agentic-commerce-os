@@ -29,8 +29,8 @@ type CheckoutState =
   | 'verifying'
   | 'success'
   | 'failed'
-  | 'unknown'      // PAYMENT_UNKNOWN — recovery required
-  | 'recovering'   // calling /api/payment/recover
+  | 'unknown'
+  | 'recovering'
   | 'error';
 
 export default function CheckoutButton({
@@ -43,8 +43,6 @@ export default function CheckoutButton({
   const [state, setState] = useState<CheckoutState>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [showTimeline, setShowTimeline] = useState(false);
-
-  // Track if the Razorpay handler fired (payment completion callback)
   const handlerFiredRef = useRef(false);
 
   const handleCheckout = async () => {
@@ -53,7 +51,6 @@ export default function CheckoutButton({
     handlerFiredRef.current = false;
 
     try {
-      // ── Step 1: Create Razorpay order via backend ──
       const orderRes = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -63,7 +60,6 @@ export default function CheckoutButton({
       const orderData = await orderRes.json();
 
       if (!orderRes.ok) {
-        // Server returned CALL_RECOVER — transition to unknown UI
         if (orderData.action === 'CALL_RECOVER') {
           setState('unknown');
           setShowTimeline(true);
@@ -72,7 +68,6 @@ export default function CheckoutButton({
         throw new Error(orderData.details || orderData.error || 'Failed to create order');
       }
 
-      // ── Step 2: Open Razorpay Standard Checkout ──
       if (typeof window === 'undefined' || !window.Razorpay) {
         throw new Error('Razorpay SDK not loaded. Please refresh the page.');
       }
@@ -86,13 +81,8 @@ export default function CheckoutButton({
         name: 'Agentic Commerce OS',
         description: `Purchase: ${productName}`,
         order_id: orderData.razorpayOrderId,
-        handler: async function (response: {
-          razorpay_payment_id: string;
-          razorpay_order_id: string;
-          razorpay_signature: string;
-        }) {
+        handler: async function (response: any) {
           handlerFiredRef.current = true;
-          // ── Step 3: Verify payment server-side ──
           setState('verifying');
 
           try {
@@ -124,7 +114,6 @@ export default function CheckoutButton({
               onPaymentComplete({ success: false, transactionState: 'PAYMENT_FAILED' });
             }
           } catch {
-            // Verification network error — state is now unknown
             setState('unknown');
             setShowTimeline(true);
             onPaymentComplete({ success: false, transactionState: 'PAYMENT_UNKNOWN' });
@@ -132,16 +121,11 @@ export default function CheckoutButton({
         },
         modal: {
           ondismiss: async function () {
-            // If handler never fired, the user closed the modal without paying
-            // The server may be in PAYMENT_PENDING. Check and potentially go to unknown.
             if (!handlerFiredRef.current) {
-              // Poll current state
               try {
                 const statusRes = await fetch(`/api/payment/status?transactionId=${transactionId}`);
                 const statusData = await statusRes.json();
                 if (statusData.state === 'PAYMENT_PENDING') {
-                  // The order was created but never confirmed or failed
-                  // We must NOT silently stay idle — mark as unknown so user must verify
                   setState('unknown');
                   setShowTimeline(true);
                 } else {
@@ -197,7 +181,6 @@ export default function CheckoutButton({
         setErrorMessage('Payment was not completed. Please try again.');
         onPaymentComplete({ success: false, transactionState: 'PAYMENT_FAILED' });
       } else {
-        // STILL_UNKNOWN
         setState('unknown');
         setErrorMessage('Payment provider is still unreachable. Do not retry payment.');
       }
@@ -209,7 +192,7 @@ export default function CheckoutButton({
 
   if (state === 'success') {
     return (
-      <div className="checkout-section">
+      <div className="mt-4">
         {showTimeline && (
           <IncidentTimeline
             transactionId={transactionId}
@@ -221,71 +204,41 @@ export default function CheckoutButton({
   }
 
   return (
-    <div className="checkout-section">
-      {/* Order Summary */}
-      <div className="checkout-summary">
-        <div className="checkout-summary-header">
-          <span className="checkout-summary-icon">🛒</span>
-          <span className="checkout-summary-title">Order Summary</span>
-        </div>
-        <div className="checkout-summary-row">
-          <span>{productName}</span>
-          <span className="checkout-summary-price">₹{productPrice.toLocaleString('en-IN')}</span>
-        </div>
-        <div className="checkout-summary-row checkout-summary-trust">
-          <span>Merchant</span>
-          <span className={`trust-badge trust-${merchantTrustTier.toLowerCase()}`}>
-            {merchantTrustTier}
-          </span>
-        </div>
-        <div className="checkout-summary-divider" />
-        <div className="checkout-summary-row checkout-summary-total">
-          <span>Total</span>
-          <span>₹{productPrice.toLocaleString('en-IN')}</span>
-        </div>
-      </div>
-
+    <div className="mt-4">
       {/* Unknown State — Recovery Required */}
       {state === 'unknown' && (
-        <div className="checkout-unknown">
-          <div className="checkout-unknown-header">
-            <span>⏱️</span>
+        <div className="rounded-xl border border-warning/30 bg-[#352500]/40 p-5 mb-4">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="material-symbols-outlined text-warning text-2xl">timer</span>
             <div>
-              <div className="checkout-unknown-title">Payment Status Unknown</div>
-              <div className="checkout-unknown-desc">
+              <div className="font-headline-sm text-on-surface">Payment Status Unknown</div>
+              <div className="font-body-main text-on-surface-variant text-sm mt-1">
                 Confirmation was not received. <strong>Automatic retry is blocked.</strong> Verify the payment status before proceeding.
               </div>
             </div>
           </div>
           {errorMessage && (
-            <div className="checkout-unknown-error">{errorMessage}</div>
+            <div className="bg-error-container/20 border border-error/30 text-error p-3 rounded mb-3 text-sm">
+              {errorMessage}
+            </div>
           )}
           <button
-            className="checkout-recover-btn"
+            className="bg-warning text-[#352500] hover:bg-warning/80 transition-colors font-label-micro text-label-micro uppercase px-4 py-2 rounded-lg"
             onClick={handleRecover}
           >
             🔍 Verify Payment Status
           </button>
           {showTimeline && (
-            <IncidentTimeline
-              transactionId={transactionId}
-              title="Incident Timeline"
-            />
+            <div className="mt-4"><IncidentTimeline transactionId={transactionId} title="Incident Timeline" /></div>
           )}
         </div>
       )}
 
       {/* Recovering State */}
       {state === 'recovering' && (
-        <div className="checkout-recovering">
-          <span className="btn-spinner" />
-          <span>Checking payment status with provider…</span>
-          {showTimeline && (
-            <IncidentTimeline
-              transactionId={transactionId}
-              title="Incident Timeline"
-            />
-          )}
+        <div className="rounded-xl border border-warning/30 bg-[#352500]/40 p-5 mb-4 flex items-center gap-3 text-warning">
+          <span className="btn-spinner border-warning" />
+          <span className="font-body-main text-sm">Checking payment status with provider…</span>
         </div>
       )}
 
@@ -293,44 +246,51 @@ export default function CheckoutButton({
       {state !== 'unknown' && state !== 'recovering' && (
         <>
           <button
-            className={`checkout-button ${state !== 'idle' ? 'checkout-button-loading' : ''}`}
+            className="w-full glass-panel bg-primary/10 hover:bg-primary/20 transition-all duration-300 rounded-xl p-5 flex items-center justify-between group border-primary/30"
             onClick={handleCheckout}
             disabled={state !== 'idle'}
           >
-            {state === 'idle' && (
-              <>
-                <span className="checkout-button-icon">💳</span>
-                <span>Pay ₹{productPrice.toLocaleString('en-IN')} with Razorpay</span>
-              </>
-            )}
-            {state === 'creating_order' && (
-              <><span className="btn-spinner" /><span>Creating order...</span></>
-            )}
-            {state === 'checkout_open' && (
-              <><span className="btn-spinner" /><span>Waiting for payment...</span></>
-            )}
-            {state === 'verifying' && (
-              <><span className="btn-spinner" /><span>Verifying payment...</span></>
-            )}
+            <div className="flex flex-col items-start text-left">
+              <span className="font-headline-sm text-headline-sm text-primary group-hover:text-primary-fixed transition-colors">
+                {state === 'idle' ? 'Settle Payment' : 
+                 state === 'creating_order' ? 'Creating Order...' :
+                 state === 'checkout_open' ? 'Waiting for Payment...' :
+                 state === 'verifying' ? 'Verifying Payment...' : 'Processing...'}
+              </span>
+              <span className="font-body-main text-body-main text-on-surface-variant text-sm mt-1">
+                {state === 'idle' ? `₹${productPrice.toLocaleString('en-IN')} with Razorpay` : 'Please do not close this window'}
+              </span>
+            </div>
+            
+            <div className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+              {state === 'idle' ? (
+                <span className="material-symbols-outlined">arrow_forward</span>
+              ) : (
+                <span className="btn-spinner border-on-primary" />
+              )}
+            </div>
           </button>
 
           {/* Test Mode Notice */}
-          <div className="checkout-test-notice">
-            🧪 <strong>TEST MODE</strong> — Use card 4111 1111 1111 1111, any future expiry, any CVV
+          <div className="mt-3 flex items-center gap-2 bg-[#1f1f25]/50 border border-outline-variant/10 rounded-lg p-2.5">
+            <span className="material-symbols-outlined text-outline-variant text-[16px]">science</span>
+            <span className="font-body-main text-on-surface-variant text-xs">
+              <strong>TEST MODE</strong> — Use card 4111 1111 1111 1111, any future expiry, any CVV
+            </span>
           </div>
 
           {/* Error / Failed State */}
           {(state === 'failed' || state === 'error') && (
-            <div className="checkout-error">
-              <span>❌</span>
-              <div>
-                <div className="checkout-error-title">
+            <div className="rounded-xl border border-error/30 bg-[#351000]/40 p-4 mt-4 flex items-start gap-4">
+              <span className="material-symbols-outlined text-error text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>error</span>
+              <div className="flex-1">
+                <div className="font-headline-sm text-on-surface">
                   {state === 'failed' ? 'Payment Failed' : 'Error'}
                 </div>
-                <div className="checkout-error-message">{errorMessage}</div>
+                <div className="font-body-main text-on-surface-variant text-sm mt-1">{errorMessage}</div>
               </div>
               <button
-                className="checkout-retry-btn"
+                className="font-label-micro text-label-micro text-primary uppercase hover:bg-primary/10 px-3 py-1.5 rounded transition-colors"
                 onClick={() => { setState('idle'); setErrorMessage(''); }}
               >
                 Retry

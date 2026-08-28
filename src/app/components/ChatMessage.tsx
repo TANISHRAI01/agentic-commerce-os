@@ -40,97 +40,13 @@ interface ChatMessageProps {
       requiredAttributes: string[];
       ambiguityQuestions: string[];
     };
-    selectedProduct?: {
-      id: string;
-      name: string;
-      description: string;
-      price: number;
-      currency?: string;
-      rating: number;
-      deliveryDays: number;
-      merchantTrustTier: string;
-      category: string;
-      tags: string[];
-      attributes: Record<string, string>;
-      stock: number;
-    };
-    ranking?: {
-      selectedProductId: string;
-      confidenceScore: number;
-      reasons: Array<{ factor: string; explanation: string; satisfied: boolean }>;
-      alternatives: Array<{
-        productId: string;
-        reason: string;
-        score: number;
-        product?: {
-          id: string;
-          name: string;
-          price: number;
-          rating: number;
-          deliveryDays: number;
-          description: string;
-          merchantTrustTier: string;
-          category: string;
-          tags: string[];
-          attributes: Record<string, string>;
-          stock: number;
-          currency?: string;
-        } | null;
-      }>;
-      summary: string;
-    };
-    products?: Array<{
-      id: string;
-      name: string;
-      description: string;
-      price: number;
-      currency?: string;
-      rating: number;
-      deliveryDays: number;
-      merchantTrustTier: string;
-      category: string;
-      tags: string[];
-      attributes: Record<string, string>;
-      stock: number;
-    }>;
+    selectedProduct?: any;
+    ranking?: any;
+    products?: any[];
     policyResult?: PolicyResult;
     requiresApproval?: boolean;
     searchRelaxed?: boolean;
-    merchantRecommendations?: {
-      crossSells: Array<{
-        productId: string;
-        productName: string;
-        price: number;
-        type: 'CROSS_SELL';
-        reason: string;
-        isOptional: true;
-      }>;
-      upsells: Array<{
-        productId: string;
-        productName: string;
-        price: number;
-        type: 'UPSELL';
-        reason: string;
-        isOptional: true;
-      }>;
-      bundles: Array<{
-        productId: string;
-        productName: string;
-        price: number;
-        type: 'BUNDLE';
-        reason: string;
-        isOptional: true;
-      }>;
-      contextualOffer: {
-        productId: string;
-        productName: string;
-        price: number;
-        type: 'CONTEXTUAL_OFFER';
-        reason: string;
-        isOptional: true;
-      } | null;
-      summary: string;
-    } | null;
+    merchantRecommendations?: any;
     negotiationResult?: NegotiationResult | null;
   };
 }
@@ -164,11 +80,13 @@ export default function ChatMessage({ type, content, timestamp, shopResult }: Ch
 
   if (type === 'user') {
     return (
-      <div className="chat-message chat-message-user">
-        <div className="message-avatar message-avatar-user">You</div>
-        <div className="message-content">
-          <p className="message-text">{content}</p>
-          {timestamp && <span className="message-time">{timestamp}</span>}
+      <div className="flex flex-col items-end gap-2 w-full mt-8">
+        <div className="flex items-center gap-2 mb-1 opacity-60">
+          <span className="font-tabular-data text-tabular-data text-on-surface-variant">USR_REQ</span>
+          {timestamp && <span className="font-tabular-data text-tabular-data text-on-surface-variant text-[10px]">{timestamp}</span>}
+        </div>
+        <div className="bg-surface-container border border-outline-variant/20 rounded-xl rounded-tr-sm p-4 max-w-[85%]">
+          <p className="font-body-main text-body-main text-on-surface">{content}</p>
         </div>
       </div>
     );
@@ -176,11 +94,14 @@ export default function ChatMessage({ type, content, timestamp, shopResult }: Ch
 
   if (type === 'error') {
     return (
-      <div className="chat-message chat-message-error">
-        <div className="message-avatar message-avatar-error">!</div>
-        <div className="message-content">
-          <p className="message-text message-error-text">{content}</p>
-          {timestamp && <span className="message-time">{timestamp}</span>}
+      <div className="flex flex-col items-start gap-2 w-full mt-8">
+        <div className="flex items-center gap-2 mb-1 opacity-60">
+          <span className="material-symbols-outlined text-[16px] text-error">error</span>
+          <span className="font-tabular-data text-tabular-data text-error">SYS_ERR</span>
+          {timestamp && <span className="font-tabular-data text-tabular-data text-on-surface-variant text-[10px]">{timestamp}</span>}
+        </div>
+        <div className="bg-error-container/20 border border-error/30 rounded-xl rounded-tl-sm p-4 max-w-[85%]">
+          <p className="font-body-main text-body-main text-error">{content}</p>
         </div>
       </div>
     );
@@ -194,117 +115,141 @@ export default function ChatMessage({ type, content, timestamp, shopResult }: Ch
   const isTerminal = isCompleted || isBlocked || isPaymentFailed || currentState === 'CANCELLED';
   const hasTransaction = !!shopResult?.transactionId;
 
-  // AI message
   return (
-    <div className="chat-message chat-message-ai">
-      <div className="message-avatar message-avatar-ai">AI</div>
-      <div className="message-content message-content-ai">
+    <div className="flex flex-col gap-4 w-full mt-8">
+      <div className="flex items-center gap-2 mb-1 opacity-60 pl-2">
+        <span className="material-symbols-outlined text-[16px] text-primary">smart_toy</span>
+        <span className="font-tabular-data text-tabular-data text-primary">SYS_RES</span>
+        {timestamp && <span className="font-tabular-data text-tabular-data text-on-surface-variant text-[10px]">{timestamp}</span>}
+      </div>
 
-        {/* ── Section 1: Intent ── */}
-        {shopResult?.intent && (
-          <div className="section-card">
-            <div className="section-card-header">
-              <span className="section-card-icon">🧠</span>
-              <span className="section-card-title">Intent</span>
+      {/* ── Section 1: Intent ── */}
+      {shopResult?.intent && (
+        <div className="glass-panel rounded-xl p-5 border-l-2 border-l-primary relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-3 opacity-20 pointer-events-none">
+            <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>psychology</span>
+          </div>
+          <div className="flex items-center gap-2 mb-4">
+            <span className="font-label-micro text-label-micro text-primary uppercase tracking-widest">Intent Parsed</span>
+            <div className="h-px bg-outline-variant/30 flex-1 ml-2"></div>
+          </div>
+          <div className="grid grid-cols-2 gap-y-3 gap-x-6">
+            <div>
+              <p className="font-label-micro text-label-micro text-on-surface-variant uppercase mb-1">Category</p>
+              <p className="font-body-main text-body-main text-on-surface">{shopResult.intent.category}</p>
             </div>
-            <div className="intent-chips">
-              <span className="intent-chip">📦 {shopResult.intent.category}</span>
-              {shopResult.intent.maximumPrice && (
-                <span className="intent-chip">💰 ≤ ₹{shopResult.intent.maximumPrice.toLocaleString('en-IN')}</span>
-              )}
-              {shopResult.intent.deliveryDeadline && (
-                <span className="intent-chip">🚚 ≤ {shopResult.intent.deliveryDeadline} days</span>
-              )}
-              {shopResult.intent.requiredAttributes.map((attr, i) => (
-                <span key={i} className="intent-chip">🔍 {attr}</span>
-              ))}
-            </div>
+            {shopResult.intent.maximumPrice && (
+              <div>
+                <p className="font-label-micro text-label-micro text-on-surface-variant uppercase mb-1">Budget Constraint</p>
+                <p className="font-tabular-data text-tabular-data text-on-surface">&le; ₹{shopResult.intent.maximumPrice.toLocaleString('en-IN')}</p>
+              </div>
+            )}
+            {shopResult.intent.deliveryDeadline && (
+              <div>
+                <p className="font-label-micro text-label-micro text-on-surface-variant uppercase mb-1">Delivery</p>
+                <p className="font-tabular-data text-tabular-data text-on-surface">&le; {shopResult.intent.deliveryDeadline} days</p>
+              </div>
+            )}
+            {shopResult.intent.requiredAttributes && shopResult.intent.requiredAttributes.length > 0 && (
+              <div className="col-span-2 pt-2 border-t border-outline-variant/10">
+                <p className="font-label-micro text-label-micro text-on-surface-variant uppercase mb-1">Required Attributes</p>
+                <div className="flex flex-wrap gap-2">
+                  {shopResult.intent.requiredAttributes.map((attr, i) => (
+                    <div key={i} className="inline-flex items-center gap-1.5 bg-secondary-container/20 border border-secondary-container/40 rounded-full px-2 py-0.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-secondary"></div>
+                      <span className="font-label-micro text-label-micro text-secondary uppercase">{attr}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
+      )}
 
-        {shopResult?.searchRelaxed && (
-          <div className="search-relaxed-notice">
-            ℹ️ Broadened search to find more options
+      {shopResult?.searchRelaxed && (
+        <div className="rounded-xl border border-warning/30 bg-warning-bg/40 flex items-center p-3 gap-3">
+          <span className="material-symbols-outlined text-warning" style={{ fontVariationSettings: "'FILL' 1" }}>info</span>
+          <p className="font-body-main text-body-main text-warning text-sm">Broadened search to find more options</p>
+        </div>
+      )}
+
+      {shopResult?.intent?.ambiguityQuestions && shopResult.intent.ambiguityQuestions.length > 0 && (
+        <div className="rounded-xl border border-info/30 bg-info-bg/40 p-4">
+          <span className="font-label-micro text-label-micro text-info uppercase tracking-widest mb-2 block">I could help more if you specify:</span>
+          <ul className="list-none space-y-1 mt-2">
+            {shopResult.intent.ambiguityQuestions.map((q, i) => (
+              <li key={i} className="font-body-main text-body-main text-on-surface-variant flex gap-2"><span className="text-info">→</span> {q}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {shopResult && (!shopResult.products || shopResult.products.length === 0) && (
+        <div className="glass-panel rounded-xl p-5 border-l-2 border-l-outline text-center">
+          <span className="material-symbols-outlined text-outline text-3xl mb-2">search_off</span>
+          <p className="font-body-main text-on-surface">{content || 'No products found matching your criteria. Try broadening your search.'}</p>
+        </div>
+      )}
+
+      {/* ── Section 2: AI Recommendation ── */}
+      {shopResult?.ranking && (
+        <div className="glass-panel rounded-xl p-5 border-l-2 border-l-tertiary mt-2">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="font-label-micro text-label-micro text-tertiary uppercase tracking-widest">AI Recommendation</span>
+            <div className="h-px bg-outline-variant/30 flex-1 ml-2"></div>
           </div>
-        )}
-
-        {/* Ambiguity questions */}
-        {shopResult?.intent?.ambiguityQuestions && shopResult.intent.ambiguityQuestions.length > 0 && (
-          <div className="ambiguity-section">
-            <span className="ambiguity-label">💡 I could help more if you specify:</span>
-            <ul className="ambiguity-list">
-              {shopResult.intent.ambiguityQuestions.map((q, i) => (
-                <li key={i}>{q}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* No products found */}
-        {shopResult && (!shopResult.products || shopResult.products.length === 0) && (
-          <div className="no-products-message">
-            <span className="no-products-icon">🔍</span>
-            <p>{content || 'No products found matching your criteria. Try broadening your search.'}</p>
-          </div>
-        )}
-
-        {/* ── Section 2: AI Recommendation ── */}
-        {shopResult?.ranking && (
-          <div className="section-card">
-            <div className="section-card-header">
-              <span className="section-card-icon">🎯</span>
-              <span className="section-card-title">AI Recommendation</span>
-            </div>
-            <RankingExplanation
-              summary={shopResult.ranking.summary}
-              confidenceScore={shopResult.ranking.confidenceScore}
-              reasons={shopResult.ranking.reasons}
-              alternatives={shopResult.ranking.alternatives}
-            />
-          </div>
-        )}
-
-        {/* Selected product */}
-        {shopResult?.selectedProduct && (
-          <ProductCard
-            product={shopResult.selectedProduct}
-            isRecommended={true}
+          <RankingExplanation
+            summary={shopResult.ranking.summary}
+            confidenceScore={shopResult.ranking.confidenceScore}
+            reasons={shopResult.ranking.reasons}
+            alternatives={shopResult.ranking.alternatives}
           />
-        )}
+          {shopResult?.selectedProduct && (
+            <div className="mt-4">
+              <ProductCard
+                product={shopResult.selectedProduct}
+                isRecommended={true}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
-        {/* ── Negotiation Panel (Phase 9) ── */}
-        {shopResult?.negotiationResult && shopResult.selectedProduct && (
+      {/* ── Negotiation Panel (Phase 9) ── */}
+      {shopResult?.negotiationResult && shopResult.selectedProduct && (
+        <div className="mt-2">
           <NegotiationPanel
             negotiationResult={shopResult.negotiationResult}
             productName={shopResult.selectedProduct.name}
           />
-        )}
+        </div>
+      )}
 
-        {/* ── Merchant Recommendations (optional, Phase 8) ── */}
-        {shopResult?.merchantRecommendations && (
-          <MerchantRecommendations recommendations={shopResult.merchantRecommendations as Parameters<typeof MerchantRecommendations>[0]['recommendations']} />
-        )}
+      {/* ── Merchant Recommendations (optional, Phase 8) ── */}
+      {shopResult?.merchantRecommendations && (
+        <div className="mt-2">
+          <MerchantRecommendations recommendations={shopResult.merchantRecommendations as any} />
+        </div>
+      )}
 
-        {/* ── Section 3: Policy ── */}
-        {shopResult?.policyResult && (
-          <div className="section-card">
-            <div className="section-card-header">
-              <span className="section-card-icon">🛡️</span>
-              <span className="section-card-title">Policy</span>
-            </div>
-            <PolicyPanel
-              policyResult={shopResult.policyResult}
-              transactionState={currentState}
-            />
-          </div>
-        )}
+      {/* ── Section 3: Policy ── */}
+      {shopResult?.policyResult && (
+        <div className="mt-2">
+          <PolicyPanel
+            policyResult={shopResult.policyResult}
+            transactionState={currentState}
+          />
+        </div>
+      )}
 
-        {/* Approval Dialog */}
-        {shopResult?.requiresApproval &&
-          shopResult?.transactionId &&
-          shopResult?.selectedProduct &&
-          shopResult?.policyResult &&
-          currentState === 'APPROVAL_REQUIRED' && (
+      {/* Approval Dialog */}
+      {shopResult?.requiresApproval &&
+        shopResult?.transactionId &&
+        shopResult?.selectedProduct &&
+        shopResult?.policyResult &&
+        currentState === 'APPROVAL_REQUIRED' && (
+        <div className="mt-2">
           <ApprovalDialog
             transactionId={shopResult.transactionId}
             productName={shopResult.selectedProduct.name}
@@ -313,32 +258,30 @@ export default function ChatMessage({ type, content, timestamp, shopResult }: Ch
             policyResult={shopResult.policyResult}
             onDecision={handleApprovalDecision}
           />
-        )}
+        </div>
+      )}
 
-        {/* ── Section 4: Payment ── */}
-        {isPayable &&
-          shopResult?.transactionId &&
-          shopResult?.selectedProduct && (
-          <div className="section-card">
-            <div className="section-card-header">
-              <span className="section-card-icon">💳</span>
-              <span className="section-card-title">Payment</span>
-            </div>
-            <CheckoutButton
-              transactionId={shopResult.transactionId}
-              productName={shopResult.selectedProduct.name}
-              productPrice={shopResult.selectedProduct.price}
-              merchantTrustTier={shopResult.selectedProduct.merchantTrustTier}
-              onPaymentComplete={handlePaymentComplete}
-            />
-          </div>
-        )}
+      {/* ── Section 4: Payment ── */}
+      {isPayable &&
+        shopResult?.transactionId &&
+        shopResult?.selectedProduct && (
+        <div className="mt-2">
+          <CheckoutButton
+            transactionId={shopResult.transactionId}
+            productName={shopResult.selectedProduct.name}
+            productPrice={shopResult.selectedProduct.price}
+            merchantTrustTier={shopResult.selectedProduct.merchantTrustTier}
+            onPaymentComplete={handlePaymentComplete}
+          />
+        </div>
+      )}
 
-        {/* Payment Receipt */}
-        {isCompleted &&
-          shopResult?.transactionId &&
-          shopResult?.selectedProduct &&
-          paymentResult && (
+      {/* Payment Receipt */}
+      {isCompleted &&
+        shopResult?.transactionId &&
+        shopResult?.selectedProduct &&
+        paymentResult && (
+        <div className="mt-2">
           <PaymentReceipt
             transactionId={shopResult.transactionId}
             productName={shopResult.selectedProduct.name}
@@ -346,35 +289,37 @@ export default function ChatMessage({ type, content, timestamp, shopResult }: Ch
             razorpayPaymentId={paymentResult.razorpayPaymentId || ''}
             razorpayOrderId={paymentResult.razorpayOrderId || ''}
           />
-        )}
+        </div>
+      )}
 
-        {/* Payment Failed banner */}
-        {isPaymentFailed && (
-          <div className="authorization-blocked">
-            <span>❌</span>
-            <div>
-              <div className="authorization-title">Payment Failed</div>
-              <div className="authorization-subtitle">The payment could not be verified. Please try again.</div>
-            </div>
+      {/* Payment Failed banner */}
+      {isPaymentFailed && (
+        <div className="rounded-xl border border-error/30 bg-[#351000]/40 flex items-center p-4 gap-4 mt-2">
+          <span className="material-symbols-outlined text-error text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>error</span>
+          <div>
+            <div className="font-headline-sm text-on-surface">Payment Failed</div>
+            <div className="font-body-main text-on-surface-variant text-sm">The payment could not be verified. Please try again.</div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Blocked banner */}
-        {isBlocked && shopResult?.policyResult?.overall === 'PASS' && currentState === 'BLOCKED' && (
-          <div className="authorization-blocked">
-            <span>🚫</span>
-            <div>
-              <div className="authorization-title">Purchase Rejected</div>
-              <div className="authorization-subtitle">This transaction has been cancelled</div>
-            </div>
+      {/* Blocked banner */}
+      {isBlocked && shopResult?.policyResult?.overall === 'PASS' && currentState === 'BLOCKED' && (
+        <div className="rounded-xl border border-error/30 bg-[#351000]/40 flex items-center p-4 gap-4 mt-2">
+          <span className="material-symbols-outlined text-error text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>block</span>
+          <div>
+            <div className="font-headline-sm text-on-surface">Purchase Rejected</div>
+            <div className="font-body-main text-on-surface-variant text-sm">This transaction has been cancelled</div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Alternative products */}
-        {shopResult?.ranking?.alternatives && shopResult.ranking.alternatives.length > 0 && !isBlocked && (
-          <div className="alternatives-section">
-            <h4 className="alternatives-title">Also considered:</h4>
-            {shopResult.ranking.alternatives.slice(0, 3).map((alt, i) => (
+      {/* Alternative products */}
+      {shopResult?.ranking?.alternatives && shopResult.ranking.alternatives.length > 0 && !isBlocked && (
+        <div className="mt-4 border-t border-outline-variant/20 pt-4">
+          <h4 className="font-label-micro text-label-micro text-on-surface-variant uppercase tracking-widest mb-4">Also considered:</h4>
+          <div className="space-y-4">
+            {shopResult.ranking.alternatives.slice(0, 3).map((alt: any, i: number) => (
               alt.product && (
                 <ProductCard
                   key={i}
@@ -386,33 +331,32 @@ export default function ChatMessage({ type, content, timestamp, shopResult }: Ch
               )
             ))}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* ── Section 5: Audit Trail ── */}
-        {hasTransaction && (isTerminal || showAuditTrail) && (
-          <div className="section-card section-card-audit">
-            <IncidentTimeline
-              transactionId={shopResult!.transactionId!}
-              autoRefresh={!isTerminal}
-              title="Audit Trail"
-            />
-          </div>
-        )}
+      {/* ── Section 5: Audit Trail ── */}
+      {hasTransaction && (isTerminal || showAuditTrail) && (
+        <div className="mt-2">
+          <IncidentTimeline
+            transactionId={shopResult!.transactionId!}
+            autoRefresh={!isTerminal}
+            title="Audit Trail"
+          />
+        </div>
+      )}
 
-        {hasTransaction && !isTerminal && !showAuditTrail && (
-          <button
-            className="audit-trail-toggle-btn"
-            onClick={() => setShowAuditTrail(true)}
-          >
-            📋 Show Audit Trail
-          </button>
-        )}
+      {hasTransaction && !isTerminal && !showAuditTrail && (
+        <button
+          className="w-full text-center p-3 text-on-surface-variant hover:text-primary hover:bg-surface-variant/20 transition-all rounded-xl mt-2 font-label-micro text-label-micro uppercase tracking-widest"
+          onClick={() => setShowAuditTrail(true)}
+        >
+          <span className="material-symbols-outlined align-bottom mr-1 text-[16px]">receipt_long</span>
+          Show Audit Trail
+        </button>
+      )}
 
-        {/* Fallback text */}
-        {!shopResult && <p className="message-text">{content}</p>}
-
-        {timestamp && <span className="message-time">{timestamp}</span>}
-      </div>
+      {/* Fallback text */}
+      {!shopResult && <div className="glass-panel rounded-xl p-4"><p className="font-body-main text-on-surface">{content}</p></div>}
     </div>
   );
 }

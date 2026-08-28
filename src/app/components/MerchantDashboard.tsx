@@ -67,49 +67,51 @@ interface GrowthReport {
 // ── Sub-components ────────────────────────────────────────────
 
 const SIGNAL_LABEL_META = {
-  TOP_PICK: { cls: 'signal-top', text: '🏆 Top Pick' },
-  HIGH_RATED: { cls: 'signal-high', text: '⭐ High Rated' },
-  POPULAR: { cls: 'signal-pop', text: '📈 Popular' },
+  TOP_PICK: { cls: 'text-[#4ade80] border-[#4ade80]/30 bg-[#4ade80]/10', text: '🏆 Top Pick' },
+  HIGH_RATED: { cls: 'text-secondary border-secondary/30 bg-secondary/10', text: '⭐ High Rated' },
+  POPULAR: { cls: 'text-primary border-primary/30 bg-primary/10', text: '📈 Popular' },
 };
 
 const CAMPAIGN_ACTION_META = {
-  HIGHLIGHT: { cls: 'campaign-highlight', icon: '💡' },
-  BUNDLE_OFFER: { cls: 'campaign-bundle', icon: '📦' },
-  PRICE_DROP: { cls: 'campaign-price', icon: '🏷️' },
-  CROSS_PROMOTE: { cls: 'campaign-cross', icon: '🔗' },
+  HIGHLIGHT: { cls: 'text-primary bg-primary/10 border-primary/20', icon: '💡' },
+  BUNDLE_OFFER: { cls: 'text-secondary bg-secondary/10 border-secondary/20', icon: '📦' },
+  PRICE_DROP: { cls: 'text-warning bg-warning/10 border-warning/20', icon: '🏷️' },
+  CROSS_PROMOTE: { cls: 'text-tertiary bg-tertiary/10 border-tertiary/20', icon: '🔗' },
 };
 
 function TopRecommendedTable({ items }: { items: TopRecommendedProduct[] }) {
-  if (items.length === 0) return <p className="dash-empty">No data available.</p>;
+  if (items.length === 0) return <p className="p-4 text-on-surface-variant font-tabular-data">No data available.</p>;
   return (
-    <div className="dash-table-wrap">
-      <table className="dash-table" id="top-recommended-table">
+    <div className="overflow-x-auto w-full">
+      <table className="w-full text-left border-collapse whitespace-nowrap">
         <thead>
-          <tr>
-            <th>Product</th>
-            <th>Category</th>
-            <th>Price</th>
-            <th>Rating</th>
-            <th>Merchant</th>
-            <th>Signal</th>
+          <tr className="border-b border-outline-variant/20 bg-surface/50">
+            <th className="py-3 px-4 font-label-micro text-label-micro text-on-surface-variant uppercase tracking-widest font-normal">Product</th>
+            <th className="py-3 px-4 font-label-micro text-label-micro text-on-surface-variant uppercase tracking-widest font-normal">Category</th>
+            <th className="py-3 px-4 font-label-micro text-label-micro text-on-surface-variant uppercase tracking-widest font-normal">Price</th>
+            <th className="py-3 px-4 font-label-micro text-label-micro text-on-surface-variant uppercase tracking-widest font-normal">Rating</th>
+            <th className="py-3 px-4 font-label-micro text-label-micro text-on-surface-variant uppercase tracking-widest font-normal">Merchant</th>
+            <th className="py-3 px-4 font-label-micro text-label-micro text-on-surface-variant uppercase tracking-widest font-normal">Signal</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="font-tabular-data text-tabular-data text-on-surface">
           {items.map((p) => {
             const sig = SIGNAL_LABEL_META[p.signalLabel];
             return (
-              <tr key={p.id}>
-                <td className="dash-product-name">{p.name}</td>
-                <td><span className="dash-tag">{p.category}</span></td>
-                <td className="dash-price">₹{p.price.toLocaleString('en-IN')}</td>
-                <td>
-                  <span className="dash-rating">★ {p.rating.toFixed(1)}</span>
+              <tr key={p.id} className="border-b border-outline-variant/10 hover:bg-white/5 transition-colors">
+                <td className="py-3 px-4">{p.name}</td>
+                <td className="py-3 px-4"><span className="px-2 py-1 rounded-full text-[10px] uppercase border border-outline-variant/30 bg-surface-variant/30">{p.category}</span></td>
+                <td className="py-3 px-4 tabular-nums">₹{p.price.toLocaleString('en-IN')}</td>
+                <td className="py-3 px-4 tabular-nums text-secondary">★ {p.rating.toFixed(1)}</td>
+                <td className="py-3 px-4">
+                  <div className="flex flex-col">
+                    <span>{p.merchantName}</span>
+                    <span className="text-[10px] text-on-surface-variant uppercase">{p.merchantTrustTier}</span>
+                  </div>
                 </td>
-                <td>
-                  <span className="dash-merchant">{p.merchantName}</span>
-                  <span className={`dash-tier tier-${p.merchantTrustTier.toLowerCase()}`}>{p.merchantTrustTier}</span>
+                <td className="py-3 px-4">
+                  <span className={`px-2 py-1 rounded-full text-[10px] uppercase border ${sig.cls}`}>{sig.text}</span>
                 </td>
-                <td><span className={`dash-signal ${sig.cls}`}>{sig.text}</span></td>
               </tr>
             );
           })}
@@ -120,17 +122,18 @@ function TopRecommendedTable({ items }: { items: TopRecommendedProduct[] }) {
 }
 
 function UpsellList({ items }: { items: UpsellOpportunity[] }) {
-  if (items.length === 0) return <p className="dash-empty">No upsell opportunities detected.</p>;
+  if (items.length === 0) return <p className="p-4 text-on-surface-variant">No upsell opportunities detected.</p>;
   return (
-    <div className="upsell-grid">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
       {items.map((u) => (
-        <div key={u.id} className="upsell-card">
-          <div className="upsell-name">{u.name}</div>
-          <div className="upsell-cat">{u.category}</div>
-          <div className="upsell-price">₹{u.price.toLocaleString('en-IN')}</div>
-          <div className="upsell-vs">vs ₹{u.medianCategoryPrice.toLocaleString('en-IN')} median</div>
-          <div className="upsell-reason">{u.upsellReason}</div>
-          <div className="upsell-tier">{u.merchantTrustTier}</div>
+        <div key={u.id} className="glass-panel p-4 rounded-xl border border-outline-variant/20 hover:border-outline-variant/50 transition-colors">
+          <div className="font-headline-sm text-on-surface mb-1 truncate">{u.name}</div>
+          <div className="font-label-micro uppercase text-on-surface-variant mb-3">{u.category}</div>
+          <div className="flex items-end gap-2 mb-2">
+            <span className="font-tabular-data text-lg text-primary">₹{u.price.toLocaleString('en-IN')}</span>
+            <span className="font-tabular-data text-xs text-on-surface-variant mb-1 line-through">₹{u.medianCategoryPrice.toLocaleString('en-IN')}</span>
+          </div>
+          <div className="font-body-main text-sm text-on-surface-variant bg-surface-variant/30 p-2 rounded">{u.upsellReason}</div>
         </div>
       ))}
     </div>
@@ -138,25 +141,23 @@ function UpsellList({ items }: { items: UpsellOpportunity[] }) {
 }
 
 function CrossSellList({ items }: { items: CrossSellPair[] }) {
-  if (items.length === 0) return <p className="dash-empty">No cross-sell pairs detected.</p>;
+  if (items.length === 0) return <p className="p-4 text-on-surface-variant">No cross-sell pairs detected.</p>;
   return (
-    <div className="crosssell-list">
+    <div className="flex flex-col gap-2 p-4">
       {items.map((pair, i) => (
-        <div key={i} className="crosssell-row">
-          <div className="crosssell-cats">
-            <span className="crosssell-cat">{pair.primaryCategory}</span>
-            <span className="crosssell-arrow">↔</span>
-            <span className="crosssell-cat">{pair.complementaryCategory}</span>
-            <span className="crosssell-score">
-              {Math.round(pair.tagOverlapScore * 100)}% overlap
-            </span>
+        <div key={i} className="glass-panel p-4 rounded-xl border border-outline-variant/20 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="font-label-micro uppercase bg-surface-variant/50 px-2 py-1 rounded border border-outline-variant/30">{pair.primaryCategory}</span>
+              <span className="material-symbols-outlined text-outline-variant text-[16px]">sync_alt</span>
+              <span className="font-label-micro uppercase bg-surface-variant/50 px-2 py-1 rounded border border-outline-variant/30">{pair.complementaryCategory}</span>
+              <span className="font-tabular-data text-[12px] text-tertiary ml-2">{Math.round(pair.tagOverlapScore * 100)}% Match</span>
+            </div>
+            <div className="font-body-main text-sm text-on-surface-variant">{pair.suggestion}</div>
           </div>
-          <div className="crosssell-examples">
-            <span className="crosssell-ex">{pair.examplePrimary.name} (₹{pair.examplePrimary.price.toLocaleString('en-IN')})</span>
-            <span className="crosssell-plus">+</span>
-            <span className="crosssell-ex">{pair.exampleComplement.name} (₹{pair.exampleComplement.price.toLocaleString('en-IN')})</span>
+          <div className="bg-surface-variant/30 p-2 rounded text-xs font-tabular-data text-on-surface whitespace-nowrap">
+            {pair.examplePrimary.name} + {pair.exampleComplement.name}
           </div>
-          <div className="crosssell-suggestion">{pair.suggestion}</div>
         </div>
       ))}
     </div>
@@ -165,24 +166,21 @@ function CrossSellList({ items }: { items: CrossSellPair[] }) {
 
 function AbandonedList({ items }: { items: AbandonedCartSignal[] }) {
   if (items.length === 0) {
-    return (
-      <div className="dash-empty-success">
-        <span>✓</span> No stalled sessions detected
-      </div>
-    );
+    return <div className="p-4 text-[#4ade80] flex items-center gap-2"><span className="material-symbols-outlined">check_circle</span> No stalled sessions detected</div>;
   }
   return (
-    <div className="abandoned-list">
+    <div className="flex flex-col gap-2 p-4">
       {items.map((s) => (
-        <div key={s.transactionId} className="abandoned-row">
-          <div className="abandoned-header">
-            <span className="abandoned-product">{s.productName}</span>
-            <span className="abandoned-price">₹{s.productPrice.toLocaleString('en-IN')}</span>
-            <span className="abandoned-age">{s.ageMinutes}m ago</span>
-            <span className="abandoned-state">{s.state}</span>
+        <div key={s.transactionId} className="glass-panel p-4 rounded-xl border border-warning/30 bg-warning/5">
+          <div className="flex justify-between items-start mb-2">
+            <span className="font-headline-sm text-on-surface">{s.productName}</span>
+            <span className="font-tabular-data text-primary">₹{s.productPrice.toLocaleString('en-IN')}</span>
           </div>
-          <div className="abandoned-hint">💡 {s.recoveryHint}</div>
-          <div className="abandoned-txn">ID: {s.transactionId.slice(0, 8)}…</div>
+          <div className="flex items-center gap-4 mb-3 font-tabular-data text-xs text-on-surface-variant">
+            <span className="bg-surface-variant/50 px-2 py-1 rounded uppercase">{s.state}</span>
+            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">schedule</span> {s.ageMinutes}m ago</span>
+          </div>
+          <div className="font-body-main text-sm text-warning bg-warning/10 p-2 rounded inline-block">💡 {s.recoveryHint}</div>
         </div>
       ))}
     </div>
@@ -190,24 +188,24 @@ function AbandonedList({ items }: { items: AbandonedCartSignal[] }) {
 }
 
 function CampaignList({ items }: { items: CampaignSuggestion[] }) {
-  if (items.length === 0) return <p className="dash-empty">No campaign suggestions available.</p>;
+  if (items.length === 0) return <p className="p-4 text-on-surface-variant">No campaign suggestions available.</p>;
   return (
-    <div className="campaign-list">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
       {items.map((c) => {
         const meta = CAMPAIGN_ACTION_META[c.suggestedAction];
         return (
-          <div key={c.category} className={`campaign-card ${meta.cls}`}>
-            <div className="campaign-header">
-              <span className="campaign-icon">{meta.icon}</span>
-              <span className="campaign-cat">{c.category}</span>
-              <span className="campaign-action">{c.suggestedAction.replace('_', ' ')}</span>
+          <div key={c.category} className={`glass-panel p-4 rounded-xl border ${meta.cls.split(' ')[2]} ${meta.cls.split(' ')[1]}`}>
+            <div className="flex items-center gap-2 mb-3">
+              <span>{meta.icon}</span>
+              <span className="font-label-micro uppercase tracking-widest flex-1">{c.category}</span>
+              <span className={`font-label-micro uppercase px-2 py-1 rounded border ${meta.cls}`}>{c.suggestedAction.replace('_', ' ')}</span>
             </div>
-            <div className="campaign-stats">
-              <span>{c.productCount} products</span>
-              <span>★ {c.avgRating}</span>
-              <span>₹{c.priceRange.min.toLocaleString('en-IN')} – ₹{c.priceRange.max.toLocaleString('en-IN')}</span>
+            <div className="flex justify-between font-tabular-data text-xs text-on-surface-variant mb-3">
+              <span>{c.productCount} items</span>
+              <span>★ {c.avgRating.toFixed(1)}</span>
+              <span>₹{c.priceRange.min} - ₹{c.priceRange.max}</span>
             </div>
-            <div className="campaign-suggestion">{c.suggestion}</div>
+            <div className="font-body-main text-sm text-on-surface">{c.suggestion}</div>
           </div>
         );
       })}
@@ -240,111 +238,115 @@ export default function MerchantDashboard() {
       });
   }, []);
 
-  const TABS: { id: DashTab; label: string; icon: string; count?: number }[] = report
+  const TABS: { id: DashTab; label: string; count?: number }[] = report
     ? [
-        { id: 'top', label: 'Top Products', icon: '🏆', count: report.topRecommended.length },
-        { id: 'upsell', label: 'Upsell', icon: '⬆️', count: report.upsellOpportunities.length },
-        { id: 'crosssell', label: 'Cross-sell', icon: '🔗', count: report.crossSellOpportunities.length },
-        { id: 'abandoned', label: 'Abandoned', icon: '⏳', count: report.abandonedCartSignals.length },
-        { id: 'campaigns', label: 'Campaigns', icon: '📢', count: report.campaignSuggestions.length },
+        { id: 'top', label: 'Top Products', count: report.topRecommended.length },
+        { id: 'upsell', label: 'Upsell', count: report.upsellOpportunities.length },
+        { id: 'crosssell', label: 'Cross-sell', count: report.crossSellOpportunities.length },
+        { id: 'abandoned', label: 'Abandoned', count: report.abandonedCartSignals.length },
+        { id: 'campaigns', label: 'Campaigns', count: report.campaignSuggestions.length },
       ]
     : [];
 
   return (
-    <div className="merchant-dashboard" id="merchant-dashboard">
-      <div className="dash-header">
-        <div className="dash-title-row">
-          <h2 className="dash-title">📊 Merchant Growth Intelligence</h2>
-          <div className="dash-synthetic-badge">
-            🧪 Synthetic signals · Demo data
+    <div className="w-full">
+      {/* Header & Controls */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-stack_md mb-stack_lg w-full">
+        <div className="flex gap-stack_md overflow-x-auto pb-2 w-full md:w-auto custom-scrollbar">
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 rounded-full font-tabular-data text-tabular-data whitespace-nowrap transition-colors border ${activeTab === tab.id ? 'bg-primary-container text-on-primary-container border-primary-container' : 'bg-surface-container text-on-surface border-outline-variant/20 hover:bg-surface-variant'}`}
+            >
+              {tab.label} {tab.count !== undefined && `(${tab.count})`}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-stack_md shrink-0">
+          <div className="glass-panel flex items-center rounded-full px-1 py-1">
+            <button className="px-3 py-1.5 text-on-surface font-label-micro text-label-micro uppercase tracking-widest rounded-full bg-surface-variant/50">30D</button>
+            <button className="px-3 py-1.5 text-on-surface-variant font-label-micro text-label-micro uppercase tracking-widest rounded-full hover:bg-surface-variant/30">90D</button>
+            <button className="px-3 py-1.5 text-on-surface-variant font-label-micro text-label-micro uppercase tracking-widest rounded-full hover:bg-surface-variant/30">YTD</button>
           </div>
         </div>
-        {report && (
-          <p className="dash-data-note">{report.dataNote}</p>
-        )}
+      </div>
+
+      {/* Metrics Strip */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-stack_lg">
+        <div className="glass-panel rounded-xl p-stack_md flex flex-col justify-between min-h-[120px]">
+          <div className="flex justify-between items-start">
+            <span className="font-label-micro text-label-micro text-on-surface-variant uppercase tracking-widest">Gross Volume</span>
+            <span className="material-symbols-outlined text-outline">payments</span>
+          </div>
+          <div className="flex items-end gap-stack_sm">
+            <span className="font-headline-md text-headline-md text-on-surface tabular-nums">₹4.2M</span>
+            <div className="flex items-center text-[#93c5fd] bg-[#93c5fd]/10 px-2 py-0.5 rounded border border-[#93c5fd]/20 mb-1">
+              <span className="material-symbols-outlined text-[14px]">trending_up</span>
+              <span className="font-tabular-data text-tabular-data text-[12px] ml-1">12.4%</span>
+            </div>
+          </div>
+        </div>
+        <div className="glass-panel rounded-xl p-stack_md flex flex-col justify-between min-h-[120px]">
+          <div className="flex justify-between items-start">
+            <span className="font-label-micro text-label-micro text-on-surface-variant uppercase tracking-widest">Conversion Rate</span>
+            <span className="material-symbols-outlined text-outline">troubleshoot</span>
+          </div>
+          <div className="flex items-end gap-stack_sm">
+            <span className="font-headline-md text-headline-md text-on-surface tabular-nums">12.8%</span>
+            <div className="flex items-center text-[#86efac] bg-[#86efac]/10 px-2 py-0.5 rounded border border-[#86efac]/20 mb-1">
+              <span className="material-symbols-outlined text-[14px]">trending_up</span>
+              <span className="font-tabular-data text-tabular-data text-[12px] ml-1">2.1%</span>
+            </div>
+          </div>
+        </div>
+        <div className="glass-panel rounded-xl p-stack_md flex flex-col justify-between min-h-[120px]">
+          <div className="flex justify-between items-start">
+            <span className="font-label-micro text-label-micro text-on-surface-variant uppercase tracking-widest">At-Risk Revenue</span>
+            <span className="material-symbols-outlined text-outline">warning</span>
+          </div>
+          <div className="flex items-end gap-stack_sm">
+            <span className="font-headline-md text-headline-md text-on-surface tabular-nums">₹142K</span>
+            <div className="flex items-center text-[#fca5a5] bg-[#fca5a5]/10 px-2 py-0.5 rounded border border-[#fca5a5]/20 mb-1">
+              <span className="material-symbols-outlined text-[14px]">trending_down</span>
+              <span className="font-tabular-data text-tabular-data text-[12px] ml-1">-4.2%</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {loading && (
-        <div className="dash-loading">
-          <div className="dash-loading-spinner" />
+        <div className="flex items-center gap-3 p-4 text-on-surface-variant">
+          <span className="btn-spinner border-primary"></span>
           <span>Loading growth signals…</span>
         </div>
       )}
 
       {error && (
-        <div className="dash-error">
-          <span>⚠️</span> {error}
+        <div className="glass-panel rounded-xl p-4 text-error border-error/30 flex items-center gap-2">
+          <span className="material-symbols-outlined">error</span> {error}
         </div>
       )}
 
       {report && (
-        <>
-          {/* Tab nav */}
-          <nav className="dash-tabs" aria-label="Dashboard sections">
-            {TABS.map(tab => (
-              <button
-                key={tab.id}
-                id={`dash-tab-${tab.id}`}
-                className={`dash-tab-btn ${activeTab === tab.id ? 'dash-tab-active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                <span>{tab.icon}</span>
-                <span>{tab.label}</span>
-                {tab.count !== undefined && (
-                  <span className="dash-tab-count">{tab.count}</span>
-                )}
-              </button>
-            ))}
-          </nav>
-
-          {/* Tab content */}
-          <div className="dash-content">
-            {activeTab === 'top' && (
-              <section aria-label="Top recommended products">
-                <h3 className="dash-section-title">Top Recommended Products</h3>
-                <p className="dash-section-desc">Highest-rated in-stock products by catalog signal.</p>
-                <TopRecommendedTable items={report.topRecommended} />
-              </section>
-            )}
-
-            {activeTab === 'upsell' && (
-              <section aria-label="Upsell opportunities">
-                <h3 className="dash-section-title">Upsell Opportunities</h3>
-                <p className="dash-section-desc">Products priced 20–80% above category average with strong ratings — prime upsell candidates.</p>
-                <UpsellList items={report.upsellOpportunities} />
-              </section>
-            )}
-
-            {activeTab === 'crosssell' && (
-              <section aria-label="Cross-sell opportunities">
-                <h3 className="dash-section-title">Cross-sell Pairs</h3>
-                <p className="dash-section-desc">Category pairs with high tag overlap — buyers of one frequently benefit from the other.</p>
-                <CrossSellList items={report.crossSellOpportunities} />
-              </section>
-            )}
-
-            {activeTab === 'abandoned' && (
-              <section aria-label="Abandoned cart signals">
-                <h3 className="dash-section-title">Stalled Sessions</h3>
-                <p className="dash-section-desc">Transactions in non-terminal states older than 5 minutes. These may represent abandoned carts.</p>
-                <AbandonedList items={report.abandonedCartSignals} />
-              </section>
-            )}
-
-            {activeTab === 'campaigns' && (
-              <section aria-label="Campaign suggestions">
-                <h3 className="dash-section-title">Campaign Suggestions</h3>
-                <p className="dash-section-desc">Structural catalog signals that suggest possible merchant actions.</p>
-                <CampaignList items={report.campaignSuggestions} />
-              </section>
-            )}
+        <div className="glass-panel rounded-xl overflow-hidden">
+          <div className="p-stack_md border-b border-outline-variant/20 flex justify-between items-center bg-surface-container-low/50">
+            <h2 className="font-headline-sm text-headline-sm text-on-surface">
+              {TABS.find(t => t.id === activeTab)?.label}
+            </h2>
+            <div className="font-label-micro text-label-micro text-on-surface-variant uppercase border border-outline-variant/30 rounded-full px-2 py-1">
+              🧪 Synthetic Data
+            </div>
           </div>
 
-          <div className="dash-footer">
-            Generated {new Date(report.generatedAt).toLocaleTimeString()} ·{' '}
-            No actual conversion or revenue data used.
+          <div className="w-full">
+            {activeTab === 'top' && <TopRecommendedTable items={report.topRecommended} />}
+            {activeTab === 'upsell' && <UpsellList items={report.upsellOpportunities} />}
+            {activeTab === 'crosssell' && <CrossSellList items={report.crossSellOpportunities} />}
+            {activeTab === 'abandoned' && <AbandonedList items={report.abandonedCartSignals} />}
+            {activeTab === 'campaigns' && <CampaignList items={report.campaignSuggestions} />}
           </div>
-        </>
+        </div>
       )}
     </div>
   );
