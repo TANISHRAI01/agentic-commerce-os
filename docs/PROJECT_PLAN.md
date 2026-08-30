@@ -176,9 +176,9 @@
 
 ## What's Next
 
-**Current:** All phases (1–10C) complete and stable. Build passing. **353/353 tests green.**
+**Current:** All phases (1–10D) complete and stable. Build passing. **375/375 tests green.**
 
-**Next:** System is demo-ready. Merchant dashboard (10D) would be next stretch phase.
+**Next:** Project is complete. All phases delivered.
 
 ---
 
@@ -250,4 +250,23 @@
 
 **Definition of Done:** ✅ Policy Engine is authoritative. AI cannot override limits. Customers can edit limits in the UI and see changes reflected in the AI Shop behavior.
 
+---
 
+### Phase 10D — Merchant Dashboard ✅
+
+**Goal:** Replace the stub `/merchant` page with a full-featured 6-view Merchant Dashboard exposing Phase 7/8 AI Growth Intelligence.
+
+**Deliverables:**
+- [x] `GET /api/merchant/stats` — aggregate catalog + transaction stats (products, orders, revenue, top product)
+- [x] `GET /api/merchant/orders` — paginated platform transaction list (demo-labeled)
+- [x] `src/app/merchant/page.tsx` — full rewrite: 6-view dashboard with sidebar nav
+  - Overview: stats grid, trust tier, revenue, AI Growth snapshot cards
+  - Products: catalog products with AI Top Pick / Upsell badges
+  - AI Growth: 5-tab panel (Top Picks, Upsell, Cross-sell, Abandoned Carts, Campaigns)
+  - Orders: paginated list with state badges, negotiated price detection
+  - Analytics: category breakdown bars, avg rating bars, price range table
+  - Settings: shop info display, trust tier, logout
+- [x] 22 new tests in `tests/merchant-dashboard.test.ts`
+- [x] Zero regression — all 353 Phase 1-10C tests still pass (375 total)
+
+**Definition of Done:** ✅ Merchant dashboard live at `/merchant`. All 6 views work. AI Growth Intelligence fully integrated. Demo data labeled. Role isolation enforced by middleware.

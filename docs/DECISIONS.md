@@ -143,4 +143,16 @@
 
 ---
 
+## Phase 10D — Merchant Dashboard Decisions
+
+| # | Decision | Alternative Considered | Rationale |
+|---|----------|----------------------|-----------|
+| 67 | **Global growth intelligence (not merchant-scoped)** | FK-link `merchant_profiles` to catalog `merchants` table | Heuristic category matching would be unreliable. Growth signals are platform-wide and correct as-is — all 6 synthetic catalog merchants share the same heuristics. Labeled as demo data. Zero new DB columns needed. |
+| 68 | **Single-page client navigation** for merchant dashboard | Separate Next.js routes (`/merchant/growth`, `/merchant/orders`) | Same decision as Phase 10B customer dashboard (#58). Prevents loss of state between tab switches, allows smooth transitions, cleaner URL structure. |
+| 69 | **Read-only trust tier in Settings** | Allow merchants to self-assign trust tier | Trust tier is a platform signal (like a seller rating). Self-assignment would undermine the policy engine's merchant trust check, which customers depend on for financial safety. |
+| 70 | **Demo labels on all synthetic data** | Show metrics without qualification | Explicit labeling prevents a judge from mistaking synthetic heuristic data for real business metrics. The `dataNote` field was already in the growth intelligence contract — we surface it in the UI. |
+| 71 | **Existing `/api/merchant-intelligence` reused** | Create new merchant-specific intelligence endpoint | The existing endpoint already generates the full report. No new backend logic needed. The dashboard is purely a consumer of existing services. |
+
+---
+
 *This document is updated at the end of every phase.*

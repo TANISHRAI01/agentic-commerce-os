@@ -32,9 +32,10 @@
 | 10A — Role-Based Auth & User Profiles | ✅ Complete |
 | 10B — Customer Dashboard | ✅ Complete |
 | 10C — Customer Spending & AI Limits | ✅ Complete |
+| 10D — Merchant Dashboard | ✅ Complete |
 
-**Last completed phase:** 10C
-**353 tests passing. Full customer experience live.**
+**Last completed phase:** 10D
+**375 tests passing. Full customer + merchant experience live.**
 
 ---
 
@@ -228,5 +229,5 @@ npm run build    # Build for production
 
 ---
 
-*Last updated: Phase 9 completion — all phases complete.*
+*Last updated: Phase 10D completion — all phases complete.*
 *Update this file at the end of every phase.*
