@@ -38,3 +38,6 @@ next-env.d.ts
 # env and db files
 .env
 *.db
+
+# agent config — contains live API keys, never commit
+.agents/mcp_config.json
