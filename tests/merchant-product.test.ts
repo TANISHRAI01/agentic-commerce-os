@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { getDb } from '@/db/connection';
-import type { SqlJsDatabase } from 'sql.js';
+import type { Database as SqlJsDatabase } from 'sql.js';
 import { 
   getOrCreateCatalogMerchant, 
   getMerchantCatalogId,
@@ -53,21 +53,25 @@ describe('Merchant Catalog Service', () => {
   describe('Product Management CRUD', () => {
     it('should create and retrieve a product', () => {
       db.run(`INSERT INTO merchant_profiles (user_id, shop_name, trust_tier) VALUES ('test-user-3', 'Cat Shop', 'GOLD')`);
+      // Ensure catalog entry exists
+      getOrCreateCatalogMerchant(db, 'test-user-3');
       
       const newProduct = createMerchantProduct(db, 'test-user-3', {
         name: 'Test Headphones',
-        description: 'Test description for headphones',
-        category: 'electronics',
-        price: 999,
+        description: 'Test desc',
+        category: 'Electronics',
+        price: 500,
+        currency: 'INR',
         stock: 10,
-        deliveryDays: 3,
-        tags: ['test', 'audio']
+        deliveryDays: 2,
+        attributes: {},
+        tags: []
       });
 
       expect(newProduct.id).toBeDefined();
       expect(newProduct.merchantId).toBeDefined();
-      expect(newProduct.price).toBe(999);
-      expect(newProduct.tags).toContain('audio');
+      expect(newProduct.price).toBe(500);
+      expect(newProduct.currency).toBe('INR');
       expect(newProduct.availability).toBe('IN_STOCK');
       expect(newProduct.offerEligibility).toEqual([]);
 
@@ -78,13 +82,23 @@ describe('Merchant Catalog Service', () => {
 
     it('should update a product', () => {
       db.run(`INSERT INTO merchant_profiles (user_id, shop_name, trust_tier) VALUES ('test-user-4', 'Cat Shop 2', 'SILVER')`);
+      // Ensure catalog entry exists
+      getOrCreateCatalogMerchant(db, 'test-user-4');
       
       const p = createMerchantProduct(db, 'test-user-4', {
-        name: 'Initial Name', description: 'desc', category: 'cat', price: 100, stock: 5, deliveryDays: 1, tags: []
+        name: 'Initial Name',
+        description: 'Test',
+        category: 'Test',
+        price: 100,
+        currency: 'INR',
+        stock: 5,
+        deliveryDays: 1,
+        attributes: {},
+        tags: []
       });
 
       const updated = updateMerchantProduct(db, 'test-user-4', p.id, {
-        name: 'Updated Name', price: 200, stock: 0 // stock 0 should potentially change something, though availability is currently manual or implicit
+        name: 'Updated Name', price: 200, stock: 0
       });
 
       expect(updated.name).toBe('Updated Name');
@@ -99,8 +113,10 @@ describe('Merchant Catalog Service', () => {
 
     it('should deactivate a product', () => {
       db.run(`INSERT INTO merchant_profiles (user_id, shop_name, trust_tier) VALUES ('test-user-5', 'Cat Shop 3', 'BRONZE')`);
+      // Ensure catalog entry exists
+      getOrCreateCatalogMerchant(db, 'test-user-5');
       const p = createMerchantProduct(db, 'test-user-5', {
-        name: 'Active Product', description: 'desc', category: 'cat', price: 100, stock: 5, deliveryDays: 1, tags: []
+        name: 'Active Product', description: 'desc', category: 'cat', price: 100, currency: 'INR', stock: 5, deliveryDays: 1, attributes: {}, tags: []
       });
 
       deactivateMerchantProduct(db, 'test-user-5', p.id);
@@ -120,7 +136,7 @@ describe('Merchant Catalog Service', () => {
       const cat5 = getOrCreateCatalogMerchant(db, 'test-user-7');
 
       const p = createMerchantProduct(db, 'test-user-6', {
-        name: 'My Product', description: 'desc', category: 'cat', price: 100, stock: 5, deliveryDays: 1, tags: []
+        name: 'My Product', description: 'desc', category: 'cat', price: 100, currency: 'INR', stock: 5, deliveryDays: 1, attributes: {}, tags: []
       });
 
       // Should not throw

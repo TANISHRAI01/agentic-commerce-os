@@ -97,16 +97,19 @@ interface TxnRow {
  * Returns the top-rated products across the catalog.
  * Signal is derived from rating (heuristic proxy for recommendation frequency).
  */
-export function getTopRecommended(db: SqlJsDatabase): TopRecommendedProduct[] {
+export function getTopRecommended(db: SqlJsDatabase, merchantCatalogId?: string): TopRecommendedProduct[] {
+  const whereClause = merchantCatalogId ? `WHERE p.stock > 0 AND p.merchant_id = ?` : `WHERE p.stock > 0`;
+  const params = merchantCatalogId ? [merchantCatalogId] : [];
   const stmt = db.prepare(`
     SELECT p.id, p.name, p.category, p.price, p.rating,
            m.name as merchant_name, p.merchant_trust_tier, p.tags
     FROM products p
     JOIN merchants m ON p.merchant_id = m.id
-    WHERE p.stock > 0
+    ${whereClause}
     ORDER BY p.rating DESC, p.price ASC
     LIMIT 10
   `);
+  stmt.bind(params);
 
   const results: TopRecommendedProduct[] = [];
   while (stmt.step()) {
@@ -136,14 +139,18 @@ export function getTopRecommended(db: SqlJsDatabase): TopRecommendedProduct[] {
  * Returns products priced 20–80% above their category median.
  * These are strong upsell candidates when paired with cheaper alternatives.
  */
-export function getUpsellOpportunities(db: SqlJsDatabase): UpsellOpportunity[] {
+export function getUpsellOpportunities(db: SqlJsDatabase, merchantCatalogId?: string): UpsellOpportunity[] {
+  const medianWhere = merchantCatalogId ? `WHERE stock > 0 AND merchant_id = ?` : `WHERE stock > 0`;
+  const params = merchantCatalogId ? [merchantCatalogId] : [];
+  
   // Get category medians
   const medianStmt = db.prepare(`
     SELECT category, AVG(price) as avg_price
     FROM products
-    WHERE stock > 0
+    ${medianWhere}
     GROUP BY category
   `);
+  medianStmt.bind(params);
 
   const categoryMedians: Record<string, number> = {};
   while (medianStmt.step()) {
@@ -152,13 +159,15 @@ export function getUpsellOpportunities(db: SqlJsDatabase): UpsellOpportunity[] {
   }
   medianStmt.free();
 
+  const prodWhere = merchantCatalogId ? `WHERE p.stock > 0 AND p.rating >= 4.0 AND p.merchant_id = ?` : `WHERE p.stock > 0 AND p.rating >= 4.0`;
   const stmt = db.prepare(`
     SELECT p.id, p.name, p.category, p.price, p.rating, p.merchant_trust_tier, p.tags
     FROM products p
-    WHERE p.stock > 0 AND p.rating >= 4.0
+    ${prodWhere}
     ORDER BY p.category, p.price DESC
     LIMIT 30
   `);
+  stmt.bind(params);
 
   const results: UpsellOpportunity[] = [];
   while (stmt.step()) {
@@ -202,14 +211,17 @@ export function getUpsellOpportunities(db: SqlJsDatabase): UpsellOpportunity[] {
  * Finds category pairs that share tag overlap — strong cross-sell signal.
  * Returns top pairings with example products.
  */
-export function getCrossSellOpportunities(db: SqlJsDatabase): CrossSellPair[] {
+export function getCrossSellOpportunities(db: SqlJsDatabase, merchantCatalogId?: string): CrossSellPair[] {
+  const whereClause = merchantCatalogId ? `WHERE p.stock > 0 AND p.merchant_id = ?` : `WHERE p.stock > 0`;
+  const params = merchantCatalogId ? [merchantCatalogId] : [];
   const stmt = db.prepare(`
     SELECT p.id, p.name, p.category, p.price, p.tags
     FROM products p
-    WHERE p.stock > 0
+    ${whereClause}
     ORDER BY p.rating DESC
     LIMIT 60
   `);
+  stmt.bind(params);
 
   interface ProdInfo { id: string; name: string; category: string; price: number; tags: string[] }
   const products: ProdInfo[] = [];
@@ -289,19 +301,28 @@ export function getCrossSellOpportunities(db: SqlJsDatabase): CrossSellPair[] {
  * Returns transactions that are in a non-terminal state and older than 5 minutes.
  * These represent potential abandoned sessions. Purely synthetic/heuristic.
  */
-export function getAbandonedCartSignals(db: SqlJsDatabase): AbandonedCartSignal[] {
+export function getAbandonedCartSignals(db: SqlJsDatabase, merchantCatalogId?: string): AbandonedCartSignal[] {
   const terminalStates = ['COMPLETED', 'BLOCKED', 'CANCELLED', 'PAYMENT_FAILED', 'VERIFIED'];
   const placeholders = terminalStates.map(() => '?').join(', ');
+  
+  const whereClause = merchantCatalogId 
+    ? `WHERE t.state NOT IN (${placeholders}) AND t.selected_product_name IS NOT NULL AND p.merchant_id = ?`
+    : `WHERE t.state NOT IN (${placeholders}) AND t.selected_product_name IS NOT NULL`;
+  const params = merchantCatalogId ? [...terminalStates, merchantCatalogId] : terminalStates;
+
+  const joinClause = merchantCatalogId
+    ? `JOIN products p ON t.selected_product_id = p.id`
+    : `LEFT JOIN products p ON t.selected_product_id = p.id`;
 
   const stmt = db.prepare(`
-    SELECT id, state, selected_product_name, selected_product_price, created_at
-    FROM transactions
-    WHERE state NOT IN (${placeholders})
-      AND selected_product_name IS NOT NULL
-    ORDER BY created_at DESC
+    SELECT t.id, t.state, t.selected_product_name, t.selected_product_price, t.created_at
+    FROM transactions t
+    ${joinClause}
+    ${whereClause}
+    ORDER BY t.created_at DESC
     LIMIT 10
   `);
-  stmt.bind(terminalStates);
+  stmt.bind(params);
 
   const results: AbandonedCartSignal[] = [];
   const now = Date.now();
@@ -342,7 +363,10 @@ export function getAbandonedCartSignals(db: SqlJsDatabase): AbandonedCartSignal[
  * Generates campaign suggestions based on catalog characteristics.
  * No conversion or revenue data — purely structural signals.
  */
-export function getCampaignSuggestions(db: SqlJsDatabase): CampaignSuggestion[] {
+export function getCampaignSuggestions(db: SqlJsDatabase, merchantCatalogId?: string): CampaignSuggestion[] {
+  const whereClause = merchantCatalogId ? `WHERE stock > 0 AND merchant_id = ?` : `WHERE stock > 0`;
+  const params = merchantCatalogId ? [merchantCatalogId] : [];
+  
   const stmt = db.prepare(`
     SELECT category,
            COUNT(*) as product_count,
@@ -351,10 +375,11 @@ export function getCampaignSuggestions(db: SqlJsDatabase): CampaignSuggestion[] 
            MAX(price) as max_price,
            AVG(price) as avg_price
     FROM products
-    WHERE stock > 0
+    ${whereClause}
     GROUP BY category
     ORDER BY avg_rating DESC
   `);
+  stmt.bind(params);
 
   interface CatRow {
     category: string;
@@ -407,16 +432,16 @@ export function getCampaignSuggestions(db: SqlJsDatabase): CampaignSuggestion[] 
  * Generate the complete growth intelligence report.
  * All data is synthetic/heuristic — no real revenue claims.
  */
-export function generateGrowthReport(db: SqlJsDatabase): GrowthIntelligenceReport {
+export function generateGrowthReport(db: SqlJsDatabase, merchantCatalogId?: string): GrowthIntelligenceReport {
   return {
-    topRecommended: getTopRecommended(db),
-    upsellOpportunities: getUpsellOpportunities(db),
-    crossSellOpportunities: getCrossSellOpportunities(db),
-    abandonedCartSignals: getAbandonedCartSignals(db),
-    campaignSuggestions: getCampaignSuggestions(db),
+    topRecommended: getTopRecommended(db, merchantCatalogId),
+    upsellOpportunities: getUpsellOpportunities(db, merchantCatalogId),
+    crossSellOpportunities: getCrossSellOpportunities(db, merchantCatalogId),
+    abandonedCartSignals: getAbandonedCartSignals(db, merchantCatalogId),
+    campaignSuggestions: getCampaignSuggestions(db, merchantCatalogId),
     generatedAt: new Date().toISOString(),
-    dataNote:
-      'All signals are synthetic and derived from catalog heuristics. ' +
-      'No actual conversion or revenue data is used.',
+    dataNote: merchantCatalogId
+      ? 'All signals are scoped to your specific merchant catalog.'
+      : 'All signals are synthetic and derived from catalog heuristics. No actual conversion or revenue data is used.',
   };
 }

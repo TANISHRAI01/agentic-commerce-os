@@ -12,6 +12,7 @@ import type {
   AbandonedCartSignal,
   CampaignSuggestion,
 } from '@/services/growth-intelligence';
+import type { Transaction, AuditEvent } from '@/types/schemas';
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -829,6 +830,16 @@ function GrowthView({ growth, loading }: { growth: GrowthIntelligenceReport | nu
 // View: Orders
 // ─────────────────────────────────────────────────────────────
 
+function ResultIcon({ result }: { result: 'SUCCESS' | 'FAILURE' | 'INFO' | 'WARNING' }) {
+  if (result === 'SUCCESS') return <span className="material-symbols-outlined" style={{ color: '#4ade80', fontSize: '16px' }}>check_circle</span>;
+  if (result === 'FAILURE') return <span className="material-symbols-outlined" style={{ color: '#f87171', fontSize: '16px' }}>cancel</span>;
+  if (result === 'WARNING') return <span className="material-symbols-outlined" style={{ color: '#fbbf24', fontSize: '16px' }}>warning</span>;
+  return <span className="material-symbols-outlined" style={{ color: 'rgba(232,230,255,0.4)', fontSize: '16px' }}>info</span>;
+}
+
+const formatDate = (ds: string) => new Date(ds).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
+const formatTime = (ds: string) => new Date(ds).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
 function OrdersView() {
   const [orders, setOrders] = useState<MerchantOrder[]>([]);
   const [total, setTotal] = useState(0);
@@ -836,6 +847,10 @@ function OrdersView() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [dataNote, setDataNote] = useState('');
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<{ transaction: Transaction; auditEvents: AuditEvent[] } | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const fmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
 
@@ -853,6 +868,16 @@ function OrdersView() {
       .catch(() => setLoading(false));
   }, [page]);
 
+  const openDetail = async (id: string) => {
+    if (selectedId === id) { setSelectedId(null); setDetail(null); return; }
+    setSelectedId(id);
+    setDetailLoading(true);
+    try {
+      const res = await fetch(`/api/merchant/orders/${id}`);
+      if (res.ok) { const d = await res.json(); setDetail(d); }
+    } finally { setDetailLoading(false); }
+  };
+
   return (
     <div>
       <SectionTitle icon="receipt_long" label="Platform Orders" color="#fbbf24" />
@@ -865,8 +890,19 @@ function OrdersView() {
               <p style={{ fontSize: '13px', color: 'rgba(232,230,255,0.4)', marginBottom: '16px' }}>{total} order{total !== 1 ? 's' : ''} total</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
                 {orders.map(o => (
-                  <Card key={o.id}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                  <div key={o.id}>
+                    <div 
+                      onClick={() => openDetail(o.id)}
+                      style={{
+                        background: selectedId === o.id ? 'rgba(195,192,255,0.06)' : 'rgba(255,255,255,0.02)',
+                        border: `1px solid ${selectedId === o.id ? 'rgba(195,192,255,0.25)' : 'rgba(255,255,255,0.05)'}`,
+                        borderRadius: selectedId === o.id ? '16px 16px 0 0' : '12px',
+                        padding: '16px',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px'
+                      }}
+                    >
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
                           <p style={{ fontSize: '14px', fontWeight: 600, color: '#e8e6ff' }}>{o.productName}</p>
@@ -880,14 +916,76 @@ function OrdersView() {
                         )}
                         <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.25)' }}>{new Date(o.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</p>
                       </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <p style={{ fontSize: '16px', fontWeight: 700, color: '#fbbf24', fontFamily: "'Space Grotesk', sans-serif" }}>{fmt(o.finalPrice)}</p>
-                        {o.wasNegotiated && (
-                          <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.3)', textDecoration: 'line-through', marginTop: '2px' }}>{fmt(o.productPrice)}</p>
-                        )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ textAlign: 'right' }}>
+                          <p style={{ fontSize: '16px', fontWeight: 700, color: '#fbbf24', fontFamily: "'Space Grotesk', sans-serif" }}>{fmt(o.finalPrice)}</p>
+                          {o.wasNegotiated && (
+                            <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.3)', textDecoration: 'line-through', marginTop: '2px' }}>{fmt(o.productPrice)}</p>
+                          )}
+                        </div>
+                        <span className="material-symbols-outlined" style={{ fontSize: '20px', color: 'rgba(232,230,255,0.3)', transition: 'transform 0.2s', transform: selectedId === o.id ? 'rotate(180deg)' : 'none' }}>expand_more</span>
                       </div>
                     </div>
-                  </Card>
+
+                    {/* Detail Panel */}
+                    {selectedId === o.id && (
+                      <div style={{
+                        background: 'rgba(12,12,20,0.9)', border: '1px solid rgba(195,192,255,0.15)', borderTop: 'none',
+                        borderRadius: '0 0 16px 16px', padding: '20px 18px',
+                      }}>
+                        {detailLoading ? <LoadingPulse /> : detail ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            {/* Payment info */}
+                            {detail.transaction.razorpayOrderId && (
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '10px', padding: '12px' }}>
+                                  <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.35)', marginBottom: '4px', textTransform: 'uppercase' }}>Razorpay Order</p>
+                                  <p style={{ fontSize: '12px', color: '#e8e6ff', fontFamily: 'monospace' }}>{detail.transaction.razorpayOrderId}</p>
+                                </div>
+                                {detail.transaction.razorpayPaymentId && (
+                                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '10px', padding: '12px' }}>
+                                    <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.35)', marginBottom: '4px', textTransform: 'uppercase' }}>Payment ID</p>
+                                    <p style={{ fontSize: '12px', color: '#e8e6ff', fontFamily: 'monospace' }}>{detail.transaction.razorpayPaymentId}</p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {/* Negotiation Info */}
+                            {detail.transaction.negotiatedPrice && detail.transaction.selectedProductPrice &&
+                              detail.transaction.negotiatedPrice < detail.transaction.selectedProductPrice && (
+                                <div style={{ background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.15)', borderRadius: '10px', padding: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <span className="material-symbols-outlined" style={{ color: '#4ade80', fontSize: '18px' }}>savings</span>
+                                  <span style={{ fontSize: '13px', color: '#4ade80' }}>
+                                    AI negotiated price: ₹{detail.transaction.negotiatedPrice.toLocaleString('en-IN')}
+                                  </span>
+                                </div>
+                              )}
+                            {/* Failure reason */}
+                            {detail.transaction.failureReason && (
+                              <div style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: '10px', padding: '12px' }}>
+                                <p style={{ fontSize: '12px', color: '#f87171' }}>{detail.transaction.failureReason}</p>
+                              </div>
+                            )}
+                            {/* Audit Timeline */}
+                            <div>
+                              <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '10px' }}>Audit Timeline</p>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                {detail.auditEvents.filter(e => e.event !== 'STATE_TRANSITION').map(ev => (
+                                  <div key={ev.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                    <ResultIcon result={ev.result} />
+                                    <div style={{ flex: 1 }}>
+                                      <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.75)', lineHeight: 1.5 }}>{ev.reason}</p>
+                                      <p style={{ fontSize: '10px', color: 'rgba(232,230,255,0.3)', marginTop: '2px' }}>{formatTime(ev.timestamp)} · {ev.event.replace(/_/g, ' ')}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ) : <p style={{ color: 'rgba(232,230,255,0.4)', fontSize: '14px' }}>Could not load details.</p>}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
               {totalPages > 1 && (
