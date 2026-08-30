@@ -27,8 +27,12 @@ export const CustomerProfileSchema = z.object({
   monthlyPurchaseLimit: z.number().positive().default(50000),
   agentSpendingLimit: z.number().positive().default(5000),
   approvalThreshold: z.number().positive().default(3000),
+  // Phase 10C: AI policy controls
+  trustedMerchantsOnly: z.boolean().default(false),
+  requireApprovalFirstPurchase: z.boolean().default(false),
 });
 export type CustomerProfile = z.infer<typeof CustomerProfileSchema>;
+
 
 // ── Merchant Profile ─────────────────────────────────────────
 export const MerchantTrustTierAuth = z.enum([
@@ -69,6 +73,8 @@ export const CustomerSignupSchema = BaseSignupSchema.extend({
   monthlyPurchaseLimit: z.number().positive().optional(),
   agentSpendingLimit: z.number().positive().optional(),
   approvalThreshold: z.number().positive().optional(),
+  trustedMerchantsOnly: z.boolean().optional(),
+  requireApprovalFirstPurchase: z.boolean().optional(),
 });
 
 export const MerchantSignupSchema = BaseSignupSchema.extend({

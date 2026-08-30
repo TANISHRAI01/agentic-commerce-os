@@ -31,9 +31,10 @@
 | 9 — Agent-to-Agent Commerce | ✅ Complete |
 | 10A — Role-Based Auth & User Profiles | ✅ Complete |
 | 10B — Customer Dashboard | ✅ Complete |
+| 10C — Customer Spending & AI Limits | ✅ Complete |
 
-**Last completed phase:** 10B
-**332 tests passing. Full customer experience live.**
+**Last completed phase:** 10C
+**353 tests passing. Full customer experience live.**
 
 ---
 

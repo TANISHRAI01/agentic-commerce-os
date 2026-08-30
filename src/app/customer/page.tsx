@@ -544,17 +544,86 @@ function HistoryView({ onNavigateToShop }: { onNavigateToShop: () => void }) {
 // View: Spending & Limits
 // ─────────────────────────────────────────────────────────────
 
+interface SpendingData {
+  monthlySpent: number;
+  monthlyPurchaseLimit: number;
+  remainingBudget: number;
+  agentSpendingLimit: number;
+  approvalThreshold: number;
+  trustedMerchantsOnly: boolean;
+  requireApprovalFirstPurchase: boolean;
+}
+
+function Toggle({ id, checked, onChange, label, desc }: { id: string; checked: boolean; onChange: (v: boolean) => void; label: string; desc: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', padding: '16px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <div>
+        <p style={{ fontSize: '14px', fontWeight: 600, color: '#e8e6ff', marginBottom: '4px' }}>{label}</p>
+        <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', lineHeight: 1.5 }}>{desc}</p>
+      </div>
+      <button
+        id={id}
+        onClick={() => onChange(!checked)}
+        style={{
+          flexShrink: 0, width: '44px', height: '24px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+          background: checked ? 'rgba(195,192,255,0.3)' : 'rgba(255,255,255,0.1)',
+          position: 'relative', transition: 'background 0.2s',
+        }}
+        aria-checked={checked}
+        role="switch"
+      >
+        <span style={{
+          position: 'absolute', top: '2px', width: '20px', height: '20px', borderRadius: '50%',
+          background: checked ? '#c3c0ff' : 'rgba(232,230,255,0.4)',
+          left: checked ? 'calc(100% - 22px)' : '2px',
+          transition: 'left 0.2s, background 0.2s',
+        }} />
+      </button>
+    </div>
+  );
+}
+
 function SpendingView({ profile: initProfile, stats, onProfileUpdate }: { profile: CustomerProfile | null; stats: Stats | null; onProfileUpdate: (p: CustomerProfile) => void }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [agentLimit, setAgentLimit] = useState(String(initProfile?.agentSpendingLimit ?? 5000));
   const [approvalThresh, setApprovalThresh] = useState(String(initProfile?.approvalThreshold ?? 3000));
   const [monthlyLimit, setMonthlyLimit] = useState(String(initProfile?.monthlyPurchaseLimit ?? 50000));
+  const [monthlyIncome, setMonthlyIncome] = useState(String(initProfile?.monthlyIncome ?? ''));
+  const [trustedOnly, setTrustedOnly] = useState<boolean>(initProfile?.trustedMerchantsOnly ?? false);
+  const [requireFirstApproval, setRequireFirstApproval] = useState<boolean>(initProfile?.requireApprovalFirstPurchase ?? false);
   const [error, setError] = useState('');
+  // Fresh spending data fetched from server (authoritative)
+  const [spending, setSpending] = useState<SpendingData | null>(null);
+  const [spendingLoading, setSpendingLoading] = useState(true);
 
-  const limit = initProfile?.monthlyPurchaseLimit ?? 50000;
-  const spent = stats?.totalSpentThisMonth ?? 0;
-  const pct = Math.min((spent / limit) * 100, 100);
+  // Load authoritative spending data on mount
+  useEffect(() => {
+    fetch('/api/customer/profile')
+      .then(r => r.json())
+      .then(d => {
+        if (d.spending) {
+          setSpending(d.spending);
+          setAgentLimit(String(d.spending.agentSpendingLimit));
+          setApprovalThresh(String(d.spending.approvalThreshold));
+          setMonthlyLimit(String(d.spending.monthlyPurchaseLimit));
+          setTrustedOnly(d.spending.trustedMerchantsOnly);
+          setRequireFirstApproval(d.spending.requireApprovalFirstPurchase);
+        }
+        if (d.profile?.monthlyIncome) setMonthlyIncome(String(d.profile.monthlyIncome));
+        setSpendingLoading(false);
+      })
+      .catch(() => setSpendingLoading(false));
+  }, []);
+
+  const displaySpent = spending?.monthlySpent ?? stats?.totalSpentThisMonth ?? 0;
+  const displayLimit = spending?.monthlyPurchaseLimit ?? initProfile?.monthlyPurchaseLimit ?? 50000;
+  const displayRemaining = spending?.remainingBudget ?? Math.max(0, displayLimit - displaySpent);
+  const pct = Math.min((displaySpent / displayLimit) * 100, 100);
+  const barColor = pct > 85 ? '#f87171' : pct > 60 ? '#fbbf24' : '#4ade80';
+
+  const effectiveAgentLimit = Number(editing ? agentLimit : (spending?.agentSpendingLimit ?? agentLimit));
+  const effectiveApprovalThresh = Number(editing ? approvalThresh : (spending?.approvalThreshold ?? approvalThresh));
 
   const handleSave = async () => {
     setSaving(true); setError('');
@@ -566,11 +635,15 @@ function SpendingView({ profile: initProfile, stats, onProfileUpdate }: { profil
           agentSpendingLimit: Number(agentLimit),
           approvalThreshold: Number(approvalThresh),
           monthlyPurchaseLimit: Number(monthlyLimit),
+          ...(monthlyIncome ? { monthlyIncome: Number(monthlyIncome) } : {}),
+          trustedMerchantsOnly: trustedOnly,
+          requireApprovalFirstPurchase: requireFirstApproval,
         }),
       });
       if (res.ok) {
         const data = await res.json();
-        onProfileUpdate(data.profile);
+        if (data.spending) setSpending(data.spending);
+        onProfileUpdate({ ...initProfile!, ...data.profile, trustedMerchantsOnly: trustedOnly, requireApprovalFirstPurchase: requireFirstApproval });
         setEditing(false);
       } else {
         const d = await res.json();
@@ -579,61 +652,120 @@ function SpendingView({ profile: initProfile, stats, onProfileUpdate }: { profil
     } finally { setSaving(false); }
   };
 
+  const fmt = (n: number) => `₹${Number(n).toLocaleString('en-IN')}`;
   const inputSt: React.CSSProperties = { width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(195,192,255,0.2)', borderRadius: '10px', color: '#e8e6ff', fontSize: '15px', outline: 'none', boxSizing: 'border-box' };
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '640px', margin: '0 auto' }}>
       <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#e8e6ff', fontFamily: "'Space Grotesk', sans-serif", marginBottom: '24px' }}>Spending & Limits</h2>
 
       {/* Monthly progress */}
-      <div style={{ background: 'rgba(18,18,28,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '24px', marginBottom: '20px' }}>
+      <div style={{ background: 'rgba(18,18,28,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '24px', marginBottom: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
           <div>
             <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>Monthly Spend</p>
-            <p style={{ fontSize: '28px', fontWeight: 700, color: '#e8e6ff', fontFamily: "'Space Grotesk', sans-serif" }}>₹{spent.toLocaleString('en-IN')}</p>
+            <p style={{ fontSize: '28px', fontWeight: 700, color: '#e8e6ff', fontFamily: "'Space Grotesk', sans-serif" }}>{fmt(displaySpent)}</p>
           </div>
           <div style={{ textAlign: 'right' }}>
             <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', marginBottom: '4px' }}>Limit</p>
-            <p style={{ fontSize: '20px', fontWeight: 700, color: 'rgba(232,230,255,0.6)', fontFamily: "'Space Grotesk', sans-serif" }}>₹{limit.toLocaleString('en-IN')}</p>
+            <p style={{ fontSize: '20px', fontWeight: 700, color: 'rgba(232,230,255,0.6)', fontFamily: "'Space Grotesk', sans-serif" }}>{fmt(displayLimit)}</p>
           </div>
         </div>
-        <div style={{ height: '10px', borderRadius: '5px', background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${pct}%`, background: pct > 85 ? '#f87171' : pct > 60 ? '#fbbf24' : '#4ade80', borderRadius: '5px' }} />
+        <div style={{ height: '10px', borderRadius: '5px', background: 'rgba(255,255,255,0.07)', overflow: 'hidden', marginBottom: '8px' }}>
+          <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: '5px', transition: 'width 0.5s ease' }} />
         </div>
-        <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.3)', marginTop: '6px' }}>₹{Math.max(0, limit - spent).toLocaleString('en-IN')} remaining this month</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+          <span style={{ color: 'rgba(232,230,255,0.3)' }}>{pct.toFixed(0)}% used</span>
+          <span style={{ color: barColor, fontWeight: 600 }}>{fmt(displayRemaining)} remaining</span>
+        </div>
       </div>
 
-      {/* Limit cards */}
-      {[
-        { label: 'Agent Spending Limit', desc: 'Max the AI can spend without approval', value: agentLimit, setter: setAgentLimit, icon: 'smart_toy', color: '#c3c0ff' },
-        { label: 'Approval Threshold', desc: 'Purchases above this require your approval', value: approvalThresh, setter: setApprovalThresh, icon: 'verified', color: '#fbbf24' },
-        { label: 'Monthly Purchase Limit', desc: 'Total spending cap per month', value: monthlyLimit, setter: setMonthlyLimit, icon: 'calendar_month', color: '#4ade80' },
-      ].map(item => (
-        <div key={item.label} style={{ background: 'rgba(18,18,28,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '20px', marginBottom: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '20px', color: item.color }}>{item.icon}</span>
-            <div>
-              <p style={{ fontSize: '14px', fontWeight: 600, color: '#e8e6ff' }}>{item.label}</p>
-              <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)' }}>{item.desc}</p>
+      {/* Live Policy Preview */}
+      <div style={{ background: 'rgba(195,192,255,0.04)', border: '1px solid rgba(195,192,255,0.12)', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#c3c0ff' }}>policy</span>
+          <p style={{ fontSize: '13px', fontWeight: 700, color: '#c3c0ff', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Your AI Spending Controls</p>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {[
+            { icon: '✓', color: '#4ade80', text: `Under ${fmt(effectiveApprovalThresh)} — auto-approved by AI` },
+            { icon: '⚠', color: '#fbbf24', text: `${fmt(effectiveApprovalThresh)}–${fmt(effectiveAgentLimit)} — requires your approval` },
+            { icon: '✗', color: '#f87171', text: `Above ${fmt(effectiveAgentLimit)} — blocked by agent limit` },
+          ].map(item => (
+            <div key={item.text} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 0' }}>
+              <span style={{ color: item.color, fontSize: '14px', width: '16px', textAlign: 'center' }}>{item.icon}</span>
+              <span style={{ fontSize: '13px', color: 'rgba(232,230,255,0.65)' }}>{item.text}</span>
             </div>
-          </div>
-          {editing ? (
-            <input type="number" value={item.value} onChange={e => item.setter(e.target.value)} min={1} style={inputSt} />
-          ) : (
-            <p style={{ fontSize: '24px', fontWeight: 700, color: item.color, fontFamily: "'Space Grotesk', sans-serif" }}>₹{Number(item.value).toLocaleString('en-IN')}</p>
+          ))}
+          {trustedOnly && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 0', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '4px' }}>
+              <span style={{ color: '#c3c0ff', fontSize: '14px', width: '16px', textAlign: 'center' }}>🔒</span>
+              <span style={{ fontSize: '13px', color: 'rgba(195,192,255,0.7)' }}>Trusted merchants only (Platinum & Gold)</span>
+            </div>
+          )}
+          {requireFirstApproval && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 0' }}>
+              <span style={{ color: '#fbbf24', fontSize: '14px', width: '16px', textAlign: 'center' }}>⚠</span>
+              <span style={{ fontSize: '13px', color: 'rgba(232,230,255,0.65)' }}>First purchase from any merchant requires approval</span>
+            </div>
           )}
         </div>
-      ))}
+      </div>
+
+      {/* Limit Fields */}
+      <div style={{ background: 'rgba(18,18,28,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '20px', marginBottom: '12px' }}>
+        {[
+          { label: 'Agent Spending Limit', desc: 'Max the AI can spend in a single purchase', value: agentLimit, setter: setAgentLimit, icon: 'smart_toy', color: '#c3c0ff' },
+          { label: 'Approval Threshold', desc: 'Purchases above this require your approval', value: approvalThresh, setter: setApprovalThresh, icon: 'verified', color: '#fbbf24' },
+          { label: 'Monthly Purchase Limit', desc: 'Total spending cap per month', value: monthlyLimit, setter: setMonthlyLimit, icon: 'calendar_month', color: '#4ade80' },
+          { label: 'Monthly Income', desc: 'Optional — used for budget context only', value: monthlyIncome, setter: setMonthlyIncome, icon: 'payments', color: 'rgba(232,230,255,0.4)' },
+        ].map((item, idx) => (
+          <div key={item.label} style={{ padding: '14px 0', borderBottom: idx < 3 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: editing ? '8px' : '4px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: item.color }}>{item.icon}</span>
+              <div>
+                <p style={{ fontSize: '14px', fontWeight: 600, color: '#e8e6ff' }}>{item.label}</p>
+                <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)' }}>{item.desc}</p>
+              </div>
+            </div>
+            {editing ? (
+              <input type="number" value={item.value} onChange={e => item.setter(e.target.value)} min={1} placeholder={item.label === 'Monthly Income' ? 'Optional' : ''} style={inputSt} />
+            ) : (
+              <p style={{ fontSize: '22px', fontWeight: 700, color: item.color, fontFamily: "'Space Grotesk', sans-serif" }}>
+                {item.value ? fmt(Number(item.value)) : <span style={{ fontSize: '14px', color: 'rgba(232,230,255,0.3)' }}>Not set</span>}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Policy Toggles */}
+      <div style={{ background: 'rgba(18,18,28,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '4px 20px', marginBottom: '20px' }}>
+        <Toggle
+          id="toggle-trusted-merchants"
+          checked={trustedOnly}
+          onChange={v => { setTrustedOnly(v); if (!editing) setEditing(true); }}
+          label="Trusted Merchants Only"
+          desc="Only allow purchases from Platinum and Gold merchants. Bronze and unrated sellers will be blocked."
+        />
+        <Toggle
+          id="toggle-first-purchase-approval"
+          checked={requireFirstApproval}
+          onChange={v => { setRequireFirstApproval(v); if (!editing) setEditing(true); }}
+          label="Approve First Purchase from Any Merchant"
+          desc="Require your manual approval the first time the AI buys from a new merchant."
+        />
+      </div>
 
       {error && <p style={{ color: '#f87171', fontSize: '14px', marginBottom: '12px' }}>{error}</p>}
 
       <div style={{ display: 'flex', gap: '10px' }}>
         {editing ? (
           <>
-            <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'rgba(195,192,255,0.2)', color: '#c3c0ff', fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>
-              {saving ? 'Saving...' : 'Save Changes'}
+            <button id="save-limits-btn" onClick={handleSave} disabled={saving} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'rgba(195,192,255,0.2)', color: '#c3c0ff', fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>
+              {saving ? 'Saving...' : 'Save Limits'}
             </button>
-            <button onClick={() => setEditing(false)} style={{ padding: '12px 20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'none', color: 'rgba(232,230,255,0.5)', cursor: 'pointer' }}>
+            <button onClick={() => { setEditing(false); }} style={{ padding: '12px 20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'none', color: 'rgba(232,230,255,0.5)', cursor: 'pointer' }}>
               Cancel
             </button>
           </>

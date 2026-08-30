@@ -176,9 +176,9 @@
 
 ## What's Next
 
-**Current:** All phases (1–10B) complete and stable. Build passing. **333/333 tests green.**
+**Current:** All phases (1–10C) complete and stable. Build passing. **353/353 tests green.**
 
-**Next:** System is demo-ready. Merchant dashboard (10C) would be next stretch phase.
+**Next:** System is demo-ready. Merchant dashboard (10D) would be next stretch phase.
 
 ---
 
@@ -230,3 +230,24 @@
 - [x] Zero regression — all 316 Phase 1-10A tests still pass (333 total)
 
 **Definition of Done:** ✅ Customer dashboard live at `/customer`. All 6 views work. Existing AI pipeline fully accessible via AI Shop tab. Purchase history scoped to authenticated user. Spending limits editable and enforced.
+
+---
+
+### Phase 10C — Customer Spending & AI Limits ✅
+
+**Goal:** Give customers explicit control over what their AI Buyer is allowed to do financially, wired directly into the deterministic Policy Engine.
+
+**Deliverables:**
+- [x] `src/db/connection.ts` — Additive migration: `trusted_merchants_only`, `require_approval_first_purchase` on `customer_profiles`
+- [x] `src/types/auth.ts` — Zod schema extensions for new policy fields
+- [x] `src/engine/policy-engine.ts` — Extended `evaluatePolicy()` to support new controls and enriched audit reasons, while remaining a pure function
+- [x] `src/services/customer-policy.ts` — New service to fetch profile, compute monthly spent dynamically from `transactions` table, and load authoritative config
+- [x] `src/app/api/shop/route.ts` — Wired live customer policy into shop route (fallback to defaults for anonymous users)
+- [x] API updates: `GET /api/customer/profile` (full profile + computed spending), `PATCH /api/customer/profile` (accepts toggles), `GET /api/customer/stats` (authoritative spending)
+- [x] UI updates: `SpendingView` updated with live policy preview, toggle switches, and monthly income display
+- [x] 20 new tests — `tests/customer-policy.test.ts` (monthly limit, single purchase limit, approval threshold, toggles, computeMonthlySpent)
+- [x] Zero regression — all 333 tests still pass (353 total)
+
+**Definition of Done:** ✅ Policy Engine is authoritative. AI cannot override limits. Customers can edit limits in the UI and see changes reflected in the AI Shop behavior.
+
+

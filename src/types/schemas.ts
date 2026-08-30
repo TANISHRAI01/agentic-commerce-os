@@ -142,7 +142,13 @@ export const PolicyEvaluationInputSchema = z.object({
   approvalThreshold: z.number().positive(),
   allowedMerchantTiers: z.array(MerchantTrustTier).min(1),
   configCurrency: z.string().min(1).default('INR'),
+  // Phase 10C: optional per-customer controls
+  trustedMerchantsOnly: z.boolean().optional(),
+  requireApprovalFirstPurchase: z.boolean().optional(),
+  monthlySpent: z.number().min(0).optional(),
+  monthlyPurchaseLimit: z.number().positive().optional(),
 });
+
 export type PolicyEvaluationInput = z.infer<typeof PolicyEvaluationInputSchema>;
 
 // ── Transaction States ───────────────────────────────────────

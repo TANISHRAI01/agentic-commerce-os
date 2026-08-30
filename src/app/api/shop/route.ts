@@ -8,6 +8,7 @@ import { rankProducts, HallucinatedProductError } from '@/agents/decision';
 import { generateMerchantRecommendations, HallucinatedRecommendationError } from '@/agents/merchant';
 import { LLMValidationError, LLMConnectionError } from '@/services/llm';
 import { evaluatePolicy, DEFAULT_POLICY_CONFIG } from '@/engine/policy-engine';
+import { getCustomerPolicyConfig } from '@/services/customer-policy';
 import type { Product, Merchant } from '@/types/schemas';
 import type { MerchantRecommendations } from '@/types/ranking';
 
@@ -256,11 +257,18 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // ── Phase 10C: Load live customer policy config ──
+    // Authenticated users: load from customer_profiles + compute monthly spend.
+    // Anonymous (demo mode): fall back to DEFAULT_POLICY_CONFIG — no change.
+    const policyConfig = sessionUserId
+      ? getCustomerPolicyConfig(db, sessionUserId)
+      : DEFAULT_POLICY_CONFIG;
+
     const policyResult = evaluatePolicy({
       cartTotal: selectedProduct.price,
       cartCurrency: selectedProduct.currency,
       merchantTrustTier: selectedProduct.merchantTrustTier,
-      ...DEFAULT_POLICY_CONFIG,
+      ...policyConfig,
     });
 
     createAuditEvent(db, {
@@ -306,8 +314,20 @@ export async function POST(request: NextRequest) {
       };
     });
 
+    // Attach policy context to response so UI can display live limits
+    const policyContext = sessionUserId && 'remainingBudget' in policyConfig
+      ? {
+          monthlySpent: (policyConfig as ReturnType<typeof getCustomerPolicyConfig>).monthlySpent,
+          monthlyPurchaseLimit: (policyConfig as ReturnType<typeof getCustomerPolicyConfig>).monthlyPurchaseLimit,
+          remainingBudget: (policyConfig as ReturnType<typeof getCustomerPolicyConfig>).remainingBudget,
+          agentSpendingLimit: policyConfig.agentSpendingLimit,
+          approvalThreshold: policyConfig.approvalThreshold,
+        }
+      : null;
+
     return NextResponse.json({
       success: true,
+      policyContext,
       transactionId: txn.id,
       intent,
       products,

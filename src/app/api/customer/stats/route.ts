@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db/connection';
 import { getTransactionsByUserId, countTransactionsByUserId } from '@/services/transaction';
 import { getAuditTrail } from '@/audit/logger';
+import { getCustomerPolicyConfig } from '@/services/customer-policy';
+
 
 export async function GET(req: NextRequest) {
   try {
@@ -72,13 +74,27 @@ export async function GET(req: NextRequest) {
     // Sort by timestamp desc, take top 10
     recentActivity.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 
+    // Phase 10C: include live policy context (authoritative server-side)
+    const policyConfig = getCustomerPolicyConfig(db, userId);
+
     return NextResponse.json({
-      totalSpentThisMonth,
+      totalSpentThisMonth: policyConfig.monthlySpent, // use policy service value (authoritative)
       pendingApprovals,
       totalTransactions,
       completedPurchases,
       recentActivity: recentActivity.slice(0, 10),
+      // Spending & Limits context
+      spending: {
+        monthlySpent: policyConfig.monthlySpent,
+        monthlyPurchaseLimit: policyConfig.monthlyPurchaseLimit,
+        remainingBudget: policyConfig.remainingBudget,
+        agentSpendingLimit: policyConfig.agentSpendingLimit,
+        approvalThreshold: policyConfig.approvalThreshold,
+        trustedMerchantsOnly: policyConfig.trustedMerchantsOnly,
+        requireApprovalFirstPurchase: policyConfig.requireApprovalFirstPurchase,
+      },
     });
+
   } catch (err) {
     console.error('[/api/customer/stats] Error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

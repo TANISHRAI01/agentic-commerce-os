@@ -69,14 +69,17 @@ export async function signupUser(data: SignupRequest): Promise<AuthUser> {
   if (data.role === 'CUSTOMER') {
     db.run(
       `INSERT INTO customer_profiles
-         (user_id, monthly_income, monthly_purchase_limit, agent_spending_limit, approval_threshold)
-       VALUES (?, ?, ?, ?, ?)`,
+         (user_id, monthly_income, monthly_purchase_limit, agent_spending_limit,
+          approval_threshold, trusted_merchants_only, require_approval_first_purchase)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         userId,
         data.monthlyIncome ?? null,
         data.monthlyPurchaseLimit ?? 50000,
         data.agentSpendingLimit ?? 5000,
         data.approvalThreshold ?? 3000,
+        data.trustedMerchantsOnly ? 1 : 0,
+        data.requireApprovalFirstPurchase ? 1 : 0,
       ],
     );
   } else {
@@ -185,14 +188,16 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
   const db = await getDb();
 
   const result = db.exec(
-    `SELECT user_id, monthly_income, monthly_purchase_limit, agent_spending_limit, approval_threshold
+    `SELECT user_id, monthly_income, monthly_purchase_limit, agent_spending_limit,
+            approval_threshold, trusted_merchants_only, require_approval_first_purchase
      FROM customer_profiles WHERE user_id = ?`,
     [userId],
   );
 
   if (!result[0]?.values?.length) return null;
 
-  const [uid, monthlyIncome, monthlyPurchaseLimit, agentSpendingLimit, approvalThreshold] =
+  const [uid, monthlyIncome, monthlyPurchaseLimit, agentSpendingLimit, approvalThreshold,
+         trustedMerchantsOnly, requireApprovalFirstPurchase] =
     result[0].values[0] as (string | number | null)[];
 
   return {
@@ -201,6 +206,8 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
     monthlyPurchaseLimit: Number(monthlyPurchaseLimit),
     agentSpendingLimit: Number(agentSpendingLimit),
     approvalThreshold: Number(approvalThreshold),
+    trustedMerchantsOnly: Boolean(trustedMerchantsOnly),
+    requireApprovalFirstPurchase: Boolean(requireApprovalFirstPurchase),
   };
 }
 

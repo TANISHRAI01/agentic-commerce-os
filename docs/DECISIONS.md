@@ -131,5 +131,16 @@
 
 ---
 
-*This document is updated at the end of every phase.*
+## Phase 10C — Customer Spending & AI Limits Decisions
 
+| # | Decision | Alternative Considered | Rationale |
+|---|----------|----------------------|-----------|
+| 62 | **Policy engine overrides allowed tiers for trusted mode** | Add a separate check for trusted mode outside policy | Keeping all financial rules inside `evaluatePolicy()` ensures it remains the single source of truth for all checks. The pure function architecture scales perfectly to support this additive rule. |
+| 63 | **`requireApprovalFirstPurchase` additive logic** | Create a separate rule engine for first purchases | This logic maps perfectly to the existing `requiresApproval` Boolean returned by the policy engine. It cleanly modifies the existing `APPROVAL_THRESHOLD` check logic, keeping the engine cohesive. |
+| 64 | **Server-side authoritative spending calculation** | Store monthly spent on the profile and increment | Calculating `monthlySpent` dynamically from the `transactions` table ensures the limit is always authoritative. If a transaction fails, it won't mistakenly increment limits, avoiding race conditions and complex rollback logic. |
+| 65 | **Dynamic fallback to default limits in `/api/shop`** | Force users to log in | Maintain compatibility with demo mode. Unauthenticated requests use the existing static defaults, authenticated requests pull authoritative dynamically fetched profiles. |
+| 66 | **UI is display-only, backend enforces** | Validate limits on the client before `/api/shop` | The UI Policy Preview is just a visual aid. The actual `evaluatePolicy()` function runs on the server AFTER all LLM interactions, guaranteeing limits can never be bypassed, even by a maliciously crafted request. |
+
+---
+
+*This document is updated at the end of every phase.*

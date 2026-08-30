@@ -212,4 +212,8 @@ function initSchema(database: SqlJsDatabase): void {
 
   database.run(`CREATE INDEX IF NOT EXISTS idx_auth_users_email ON auth_users(email)`);
   database.run(`CREATE INDEX IF NOT EXISTS idx_auth_users_role ON auth_users(role)`);
+
+  // ── Phase 10C: New customer policy controls (additive — safe on existing DBs) ──
+  try { database.run(`ALTER TABLE customer_profiles ADD COLUMN trusted_merchants_only INTEGER NOT NULL DEFAULT 0`); } catch {}
+  try { database.run(`ALTER TABLE customer_profiles ADD COLUMN require_approval_first_purchase INTEGER NOT NULL DEFAULT 0`); } catch {}
 }
