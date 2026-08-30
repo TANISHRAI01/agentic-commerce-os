@@ -30,9 +30,10 @@
 | 8 — Merchant AI + Growth | ✅ Complete (tagged `v0.8-growth`) |
 | 9 — Agent-to-Agent Commerce | ✅ Complete |
 | 10A — Role-Based Auth & User Profiles | ✅ Complete |
+| 10B — Customer Dashboard | ✅ Complete |
 
-**Last completed phase:** 10A
-**316 tests passing. Auth system live.**
+**Last completed phase:** 10B
+**332 tests passing. Full customer experience live.**
 
 ---
 

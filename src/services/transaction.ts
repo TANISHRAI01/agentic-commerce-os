@@ -14,7 +14,7 @@ import { saveDb } from '@/db/connection';
  */
 export function createTransaction(
   db: SqlJsDatabase,
-  params?: { intentRaw?: string; intentId?: string; idempotencyKey?: string },
+  params?: { intentRaw?: string; intentId?: string; idempotencyKey?: string; userId?: string },
 ): Transaction {
   if (params?.idempotencyKey) {
     const existing = getTransactionByIdempotencyKey(db, params.idempotencyKey);
@@ -35,9 +35,9 @@ export function createTransaction(
   };
 
   db.run(
-    `INSERT INTO transactions (id, state, intent_id, intent_raw, idempotency_key, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [txn.id, txn.state, txn.intentId ?? null, txn.intentRaw ?? null, txn.idempotencyKey, txn.createdAt, txn.updatedAt],
+    `INSERT INTO transactions (id, state, intent_id, intent_raw, idempotency_key, user_id, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [txn.id, txn.state, txn.intentId ?? null, txn.intentRaw ?? null, txn.idempotencyKey, params?.userId ?? null, txn.createdAt, txn.updatedAt],
   );
 
   createAuditEvent(db, {
@@ -233,4 +233,74 @@ function rowToTransaction(row: Record<string, unknown>): Transaction {
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
+}
+
+/**
+ * Get all transactions for a specific user, ordered by most recent first.
+ * Used by the Customer Dashboard.
+ */
+export function getTransactionsByUserId(
+  db: SqlJsDatabase,
+  userId: string,
+  limit = 20,
+  offset = 0,
+): Transaction[] {
+  const stmt = db.prepare(
+    `SELECT id, state, intent_id, intent_raw, selected_product_id,
+            selected_product_name, selected_product_price,
+            negotiated_price, negotiation_rounds, negotiation_log,
+            policy_result, approval_status, razorpay_order_id, razorpay_payment_id,
+            idempotency_key, failure_reason, user_id, created_at, updated_at
+     FROM transactions
+     WHERE user_id = ?
+     ORDER BY created_at DESC
+     LIMIT ? OFFSET ?`,
+  );
+  stmt.bind([userId, limit, offset]);
+
+  const results: Transaction[] = [];
+  while (stmt.step()) {
+    results.push(rowToTransaction(stmt.getAsObject() as Record<string, unknown>));
+  }
+  stmt.free();
+  return results;
+}
+
+/**
+ * Count transactions by userId and optional state filter.
+ */
+export function countTransactionsByUserId(
+  db: SqlJsDatabase,
+  userId: string,
+  state?: string,
+): number {
+  const stmt = state
+    ? db.prepare(`SELECT COUNT(*) as cnt FROM transactions WHERE user_id = ? AND state = ?`)
+    : db.prepare(`SELECT COUNT(*) as cnt FROM transactions WHERE user_id = ?`);
+  state ? stmt.bind([userId, state]) : stmt.bind([userId]);
+  stmt.step();
+  const row = stmt.getAsObject() as { cnt: number };
+  stmt.free();
+  return Number(row.cnt);
+}
+
+/**
+ * Get a transaction by ID, with ownership verification.
+ * Returns null if not found OR if userId doesn't match.
+ */
+export function getTransactionForUser(
+  db: SqlJsDatabase,
+  transactionId: string,
+  userId: string,
+): Transaction | null {
+  const txn = getTransaction(db, transactionId);
+  if (!txn) return null;
+  // Check ownership — allow if user_id matches OR if user_id is null (anonymous)
+  const stmt = db.prepare(`SELECT user_id FROM transactions WHERE id = ?`);
+  stmt.bind([transactionId]);
+  if (!stmt.step()) { stmt.free(); return null; }
+  const row = stmt.getAsObject() as { user_id: string | null };
+  stmt.free();
+  if (row.user_id !== null && row.user_id !== userId) return null;
+  return txn;
 }

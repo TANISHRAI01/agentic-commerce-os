@@ -118,5 +118,18 @@
 
 ---
 
+## Phase 10B — Customer Dashboard Decisions
+
+| # | Decision | Alternative Considered | Rationale |
+|---|----------|----------------------|-----------|
+| 56 | **Nullable `user_id` column** on `transactions` over separate ownership table | Create `transaction_owners` join table | Single nullable column is simpler, faster to query, and safer for additive migration. A join table would require schema design and make anonymous transactions more complex. Consistent with the existing `ALTER TABLE IF NOT EXISTS` pattern. |
+| 57 | **Optional userId stamping in `/api/shop`** — no auth required | Require auth for all shop requests | Phase 1–9 demo mode must continue working without login. Making auth optional means logged-in customers get ownership stamped, while demo/unauthenticated users create anonymous transactions. No behavioral change for existing users. |
+| 58 | **Single-page client-side navigation** (view state in React) over separate Next.js pages | `/customer/home`, `/customer/shop`, etc. as separate routes | A single-page shell avoids full page reloads between views, allows smooth transitions, and lets the AI Shop input bar persist state as users switch tabs. Separate pages would lose the chat history on every navigate. |
+| 59 | **Ownership policy: anonymous transactions visible to any authenticated user** | Strict ownership — only NULL creator sees NULL-user_id transactions | Demo mode creates anonymous transactions (no session). If a user logs in *after* a demo session, showing nothing in their history is confusing. Allowing NULL-user_id transactions to be visible by any customer is a pragmatic demo-mode accommodation. |
+| 60 | **AI Shop tab imports existing components directly** (ChatMessage, LoadingState, DemoPanel) over iframe embed | Embed `/` in an iframe inside the dashboard | Direct import shares the same session context, avoids cross-frame communication, and keeps the CSP simple. Iframe would be isolated, require `postMessage` for payment events, and have scroll/height complexity. |
+| 61 | **`getTransactionForUser` returns null for wrong owner** rather than 403 | Return HTTP 403 with "forbidden" message | Returning `null → 404` prevents the customer from learning that a transaction ID exists (user enumeration via status codes). 404 is the correct behavior — the resource "doesn't exist" for this user. |
+
+---
+
 *This document is updated at the end of every phase.*
 

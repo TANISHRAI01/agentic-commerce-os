@@ -45,8 +45,26 @@ export async function POST(request: NextRequest) {
     const trimmedQuery = query.trim();
     const db = await getDb();
 
+    // ── Optional: stamp user_id if a valid session cookie exists ──
+    // Backward-compatible: no auth required. Anonymous sessions use userId = null.
+    let sessionUserId: string | undefined;
+    try {
+      const { jwtVerify } = await import('jose');
+      const sessionCookie = request.cookies.get('session_token')?.value;
+      if (sessionCookie) {
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET ?? '');
+        const { payload } = await jwtVerify(sessionCookie, secret);
+        if (payload.userId && typeof payload.userId === 'string') {
+          sessionUserId = payload.userId;
+        }
+      }
+    } catch {
+      // Invalid/expired session — proceed anonymously
+    }
+
     // ── Step 1: Create transaction ──
-    const txn = createTransaction(db, { intentRaw: trimmedQuery, idempotencyKey });
+    const txn = createTransaction(db, { intentRaw: trimmedQuery, idempotencyKey, userId: sessionUserId });
+
 
     if (txn.state !== 'CREATED') {
       return NextResponse.json(

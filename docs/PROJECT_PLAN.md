@@ -176,9 +176,9 @@
 
 ## What's Next
 
-**Current:** All phases (1–10A) complete and stable. Build passing. **316/316 tests green.**
+**Current:** All phases (1–10B) complete and stable. Build passing. **333/333 tests green.**
 
-**Next:** System is demo-ready. No further phases defined.
+**Next:** System is demo-ready. Merchant dashboard (10C) would be next stretch phase.
 
 ---
 
@@ -198,10 +198,35 @@
 - [x] `/auth` — Role-selection landing page (glassmorphism, Customer + Merchant cards)
 - [x] `/auth/login` — Login page with role toggle
 - [x] `/auth/signup` — Signup page with role-specific fields
-- [x] `/customer` — Stub dashboard (protected, links to Phase 1-9 chat)
-- [x] `/merchant` — Stub dashboard (protected, links to Phase 8 growth dashboard)
 - [x] `AuthProvider.tsx` — React context + `useAuth()` hook
 - [x] 27 new tests — signup, login, JWT, profiles, schema validation
 - [x] Zero regression — all 289 Phase 1-9 tests still pass (316 total)
 
 **Definition of Done:** ✅ Customer and merchant can sign up/login. Roles persist in JWT. Route authorization works server-side (middleware). All existing Phase 1-9 functionality intact.
+
+---
+
+### Phase 10B — Customer Dashboard ✅
+
+**Goal:** Build a full-featured customer application shell that integrates and wraps all existing Phase 1–9 AI commerce functionality.
+
+**Deliverables:**
+- [x] `src/db/connection.ts` — Additive migration: `user_id TEXT` column on `transactions` + index
+- [x] `src/services/transaction.ts` — `userId` param on `createTransaction`; new `getTransactionsByUserId`, `countTransactionsByUserId`, `getTransactionForUser` (ownership-verified)
+- [x] `src/app/api/shop/route.ts` — Optional `user_id` stamping from session cookie (backward-compatible, no auth required)
+- [x] `GET /api/customer/transactions` — Paginated customer transaction list
+- [x] `GET /api/customer/transactions/:id` — Detail + full audit trail, ownership-verified
+- [x] `GET /api/customer/stats` — Monthly spend, pending approvals, activity feed
+- [x] `PATCH /api/customer/profile` — Update name + spending limits
+- [x] `/customer` — Full 6-view customer dashboard:
+  - Home: greeting, spending progress bar, stat cards, recent purchases, recent AI activity
+  - AI Shop: existing ChatMessage/LoadingState/DemoPanel/CheckoutButton — zero code duplication
+  - Purchase History: paginated list + expandable detail with audit timeline + negotiation savings
+  - Spending & Limits: editable monthly/agent/approval limits with live progress
+  - Activity: chronological audit event feed grouped by date with timeline UI
+  - Profile: name editing, role display, logout
+- [x] Slide-out sidebar nav, sticky top bar, dark glassmorphism design
+- [x] 17 new tests — transaction ownership, pagination, cross-customer access prevention, failed states
+- [x] Zero regression — all 316 Phase 1-10A tests still pass (333 total)
+
+**Definition of Done:** ✅ Customer dashboard live at `/customer`. All 6 views work. Existing AI pipeline fully accessible via AI Shop tab. Purchase history scoped to authenticated user. Spending limits editable and enforced.

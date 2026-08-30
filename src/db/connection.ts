@@ -140,6 +140,8 @@ function initSchema(database: SqlJsDatabase): void {
   try { database.run(`ALTER TABLE transactions ADD COLUMN negotiated_price REAL`); } catch {}
   try { database.run(`ALTER TABLE transactions ADD COLUMN negotiation_rounds INTEGER DEFAULT 0`); } catch {}
   try { database.run(`ALTER TABLE transactions ADD COLUMN negotiation_log TEXT`); } catch {}
+  // Phase 10B: user ownership (nullable — anonymous transactions remain NULL)
+  try { database.run(`ALTER TABLE transactions ADD COLUMN user_id TEXT`); } catch {}
 
 
   database.run(`
@@ -170,6 +172,8 @@ function initSchema(database: SqlJsDatabase): void {
   database.run(`CREATE INDEX IF NOT EXISTS idx_products_merchant ON products(merchant_id)`);
   database.run(`CREATE INDEX IF NOT EXISTS idx_audit_transaction ON audit_events(transaction_id)`);
   database.run(`CREATE INDEX IF NOT EXISTS idx_transactions_state ON transactions(state)`);
+  database.run(`CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id)`);
+
 
   // ── Phase 10A: Auth tables (additive — safe on existing DBs) ──
   database.run(`
