@@ -170,4 +170,42 @@ function initSchema(database: SqlJsDatabase): void {
   database.run(`CREATE INDEX IF NOT EXISTS idx_products_merchant ON products(merchant_id)`);
   database.run(`CREATE INDEX IF NOT EXISTS idx_audit_transaction ON audit_events(transaction_id)`);
   database.run(`CREATE INDEX IF NOT EXISTS idx_transactions_state ON transactions(state)`);
+
+  // ── Phase 10A: Auth tables (additive — safe on existing DBs) ──
+  database.run(`
+    CREATE TABLE IF NOT EXISTS auth_users (
+      id TEXT PRIMARY KEY,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      role TEXT NOT NULL CHECK(role IN ('CUSTOMER', 'MERCHANT')),
+      name TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  database.run(`
+    CREATE TABLE IF NOT EXISTS customer_profiles (
+      user_id TEXT PRIMARY KEY,
+      monthly_income REAL,
+      monthly_purchase_limit REAL NOT NULL DEFAULT 50000,
+      agent_spending_limit REAL NOT NULL DEFAULT 5000,
+      approval_threshold REAL NOT NULL DEFAULT 3000,
+      FOREIGN KEY (user_id) REFERENCES auth_users(id)
+    )
+  `);
+
+  database.run(`
+    CREATE TABLE IF NOT EXISTS merchant_profiles (
+      user_id TEXT PRIMARY KEY,
+      shop_name TEXT NOT NULL,
+      shop_description TEXT,
+      category TEXT,
+      trust_tier TEXT NOT NULL DEFAULT 'UNRATED',
+      FOREIGN KEY (user_id) REFERENCES auth_users(id)
+    )
+  `);
+
+  database.run(`CREATE INDEX IF NOT EXISTS idx_auth_users_email ON auth_users(email)`);
+  database.run(`CREATE INDEX IF NOT EXISTS idx_auth_users_role ON auth_users(role)`);
 }

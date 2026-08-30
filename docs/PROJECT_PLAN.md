@@ -176,6 +176,32 @@
 
 ## What's Next
 
-**Current:** All 9 phases complete and stable. Build passing. 289/289 tests green.
+**Current:** All phases (1–10A) complete and stable. Build passing. **316/316 tests green.**
 
 **Next:** System is demo-ready. No further phases defined.
+
+---
+
+### Phase 10A — Role-Based Authentication & User Profiles ✅
+
+**Goal:** Introduce CUSTOMER and MERCHANT roles with secure local auth, role persistence, and server-enforced authorization.
+
+**Deliverables:**
+- [x] `src/types/auth.ts` — Zod schemas: UserRole, AuthUser, CustomerProfile, MerchantProfile, Signup/Login/Session schemas
+- [x] `src/db/connection.ts` — Additive migration: `auth_users`, `customer_profiles`, `merchant_profiles` tables
+- [x] `src/services/auth.ts` — bcryptjs hashing, JWT session (jsonwebtoken), signupUser, loginUser, profile fetchers
+- [x] `POST /api/auth/signup` — Zod-validated, httpOnly JWT cookie
+- [x] `POST /api/auth/login` — Validates credentials, sets cookie
+- [x] `POST /api/auth/logout` — Clears cookie
+- [x] `GET /api/auth/me` — Returns current user + role-specific profile
+- [x] `middleware.ts` — Edge middleware (jose) protecting /customer/* and /merchant/*
+- [x] `/auth` — Role-selection landing page (glassmorphism, Customer + Merchant cards)
+- [x] `/auth/login` — Login page with role toggle
+- [x] `/auth/signup` — Signup page with role-specific fields
+- [x] `/customer` — Stub dashboard (protected, links to Phase 1-9 chat)
+- [x] `/merchant` — Stub dashboard (protected, links to Phase 8 growth dashboard)
+- [x] `AuthProvider.tsx` — React context + `useAuth()` hook
+- [x] 27 new tests — signup, login, JWT, profiles, schema validation
+- [x] Zero regression — all 289 Phase 1-9 tests still pass (316 total)
+
+**Definition of Done:** ✅ Customer and merchant can sign up/login. Roles persist in JWT. Route authorization works server-side (middleware). All existing Phase 1-9 functionality intact.

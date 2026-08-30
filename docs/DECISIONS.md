@@ -104,6 +104,18 @@
 | 47 | **Section cards** (Intent, Recommendation, Policy, Payment, Audit) in ChatMessage | Flat linear layout with dividers | Cards create visual hierarchy. A judge scanning the screen immediately sees 5 labeled phases of the transaction. |
 | 48 | **Audit trail auto-expands on terminal states** | Always show or always hide | Auto-expand on terminal states means the judge sees the full audit trail after a completed purchase without clicking anything. During the flow, a toggle button avoids clutter. |
 
+## Phase 10A — Auth Decisions
+
+| # | Decision | Alternative Considered | Rationale |
+|---|----------|----------------------|-----------|
+| 49 | **bcryptjs** (pure JS) over **bcrypt** (native) | bcrypt npm package | bcrypt requires native C++ compilation (node-gyp, Visual Studio on Windows). bcryptjs is pure JavaScript, zero-dependency, same API. Consistent with the sql.js decision (pure-JS SQLite) already made in Phase 1. |
+| 50 | **JWT in httpOnly cookie** over **localStorage token** | Store JWT in localStorage | httpOnly cookies are inaccessible to JavaScript — immune to XSS attacks. localStorage is vulnerable to any XSS that could exfiltrate the token. httpOnly + SameSite=lax provides CSRF protection for free. |
+| 51 | **jose** for middleware JWT verification over **jsonwebtoken** | jsonwebtoken in middleware | Next.js middleware runs in the **Edge runtime**, which does not support all Node.js APIs. `jsonwebtoken` uses `crypto` (Node-only). `jose` is fully Edge-compatible and Web-crypto based. |
+| 52 | **No email verification** in Phase 10A | Send verification email | Hackathon prototype — no email server setup needed. The auth system is explicitly local/demo. Email verification adds complexity without demo value. |
+| 53 | **Additive DB migrations** for auth tables | Separate migration script / drop-and-recreate | Same pattern already established for Phase 9 negotiation columns. `CREATE TABLE IF NOT EXISTS` + `ALTER TABLE IF NOT EXISTS` pattern is safe on existing databases and never destroys existing data. |
+| 54 | **24-hour JWT expiry** | Shorter (1h) or longer (7d) | 24 hours is long enough for a demo session (no constant re-logins), short enough to not leave sessions permanently open. No refresh token complexity needed for a hackathon. |
+| 55 | **middleware.ts matcher config** instead of matching all routes | Run middleware on every route | Using `matcher: ['/customer/:path*', '/merchant/:path*', ...]` means middleware only runs on protected routes. Phase 1-9 API routes (/, /api/shop, /api/checkout, etc.) never hit the middleware — zero performance impact and zero risk of breaking existing functionality. |
+
 ---
 
 *This document is updated at the end of every phase.*

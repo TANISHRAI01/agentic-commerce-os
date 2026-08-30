@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { AuthProvider } from "./components/AuthProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -27,9 +28,11 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-background text-on-background font-body-main antialiased overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
-        <div id="app-root">
-          {children}
-        </div>
+        <AuthProvider>
+          <div id="app-root">
+            {children}
+          </div>
+        </AuthProvider>
         {/* Razorpay Standard Checkout SDK — loaded after page render */}
         <Script
           src="https://checkout.razorpay.com/v1/checkout.js"

@@ -29,9 +29,10 @@
 | 7 — AI-Readable Merchant Layer | ✅ Complete |
 | 8 — Merchant AI + Growth | ✅ Complete (tagged `v0.8-growth`) |
 | 9 — Agent-to-Agent Commerce | ✅ Complete |
+| 10A — Role-Based Auth & User Profiles | ✅ Complete |
 
-**Last completed phase:** 9
-**All phases (1–9) complete. System is demo-ready.**
+**Last completed phase:** 10A
+**316 tests passing. Auth system live.**
 
 ---
 
@@ -133,7 +134,18 @@ See `docs/AGENT_HANDOFF.md` for full details.
 
 ## What To Do Next
 
-*All phases complete. The system is demo-ready.*
+*All phases (1–10A) complete. System is demo-ready with full auth.*
+
+### Phase 10A — Role-Based Auth & User Profiles ✅ Complete
+- **Auth Types** (`src/types/auth.ts`): Zod schemas — `UserRole`, `AuthUserSchema`, `CustomerProfileSchema`, `MerchantProfileSchema`, `SignupRequestSchema` (discriminated union), `LoginRequestSchema`, `SessionPayloadSchema`
+- **DB Schema** (`src/db/connection.ts`): Three new tables added via additive migration — `auth_users` (email/password_hash/role), `customer_profiles` (spending limits with defaults), `merchant_profiles` (shopName/category/trustTier)
+- **Auth Service** (`src/services/auth.ts`): `signupUser`, `loginUser` (bcryptjs), `createSessionToken`, `verifySessionToken` (jsonwebtoken), `getUserById`, `getCustomerProfile`, `getMerchantProfile`. Custom `AuthError` class.
+- **API Routes**: `POST /api/auth/signup`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` — all with Zod validation, httpOnly JWT cookie
+- **Middleware** (`middleware.ts`): Edge middleware using `jose`. Protects `/customer/*` and `/merchant/*` server-side. All Phase 1–9 routes unaffected via explicit `matcher` config.
+- **UI**: `/auth` (role-selection landing), `/auth/login`, `/auth/signup`, `/customer` (stub dashboard), `/merchant` (stub dashboard)
+- **AuthProvider** (`src/app/components/AuthProvider.tsx`): React context for session state, `useAuth()` hook
+- **Tests**: 27 new tests in `tests/auth.test.ts`. **Total: 316 tests passing.**
+- **Zero regression**: All 289 Phase 1–9 tests unchanged and still passing
 
 
 ## Key Architecture Rules (Do NOT Violate)
