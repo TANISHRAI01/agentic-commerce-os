@@ -155,4 +155,15 @@
 
 ---
 
+## Phase 10E — Merchant Product Management Decisions
+
+| # | Decision | Alternative Considered | Rationale |
+|---|----------|----------------------|-----------|
+| 72 | **`merchant_catalog_id` on `merchant_profiles`** | Separate `merchant_owners` join table | Simpler 1-to-1 mapping via an additive migration column. Links the auth profile (merchant_profiles) to the actual product catalog container (merchants) lazily on first product creation. |
+| 73 | **Deactivation via `stock=0` + `OUT_OF_STOCK`** | Hard delete or `deleted_at` timestamp | Hard deletes break historical transactions/audits referencing the product. Setting stock=0 keeps it in the DB but removes it from catalog search discovery. |
+| 74 | **Client-side approval for AI price/metadata suggestions** | Auto-save AI suggestions to DB | Prevent hallucinated prices or incorrect categorization from going live instantly. Requires a human-in-the-loop (the merchant) to explicitly click "Apply" and "Save". |
+| 75 | **Explicit `assertProductOwnership` guard** | Filter by `merchant_id` in SQL only | Adding a dedicated JS-layer assertion explicitly defines the 403 Forbidden vs 404 Not Found boundary, ensuring no IDOR (Insecure Direct Object Reference) vulnerabilities. |
+
+---
+
 *This document is updated at the end of every phase.*

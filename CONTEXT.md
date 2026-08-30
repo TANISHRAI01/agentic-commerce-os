@@ -33,9 +33,10 @@
 | 10B — Customer Dashboard | ✅ Complete |
 | 10C — Customer Spending & AI Limits | ✅ Complete |
 | 10D — Merchant Dashboard | ✅ Complete |
+| 10E — Merchant Product Management | ✅ Complete |
 
-**Last completed phase:** 10D
-**375 tests passing. Full customer + merchant experience live.**
+**Last completed phase:** 10E
+**382 tests passing. Merchant product catalog management live.**
 
 ---
 

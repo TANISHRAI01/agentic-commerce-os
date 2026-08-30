@@ -308,13 +308,13 @@ describe('Phase 5 — Recovery & Failure Handling', () => {
 
   it('PaymentSimulator: throws if activated in production', async () => {
     const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
+    (process.env as any).NODE_ENV = 'production';
     process.env.PAYMENT_SIM_MODE = 'TIMEOUT_THEN_SUCCESS';
 
     const { getSimulatorMode } = await import('../src/services/payment-simulator');
     expect(() => getSimulatorMode()).toThrow(/must never run in production/i);
 
-    process.env.NODE_ENV = originalEnv;
+    (process.env as any).NODE_ENV = originalEnv;
     delete process.env.PAYMENT_SIM_MODE;
   });
 

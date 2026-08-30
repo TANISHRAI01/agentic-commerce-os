@@ -464,7 +464,7 @@ function HistoryView({ onNavigateToShop }: { onNavigateToShop: () => void }) {
                       ₹{(txn.negotiatedPrice ?? txn.selectedProductPrice!).toLocaleString('en-IN')}
                     </span>
                     {txn.negotiatedPrice && txn.selectedProductPrice && txn.negotiatedPrice < txn.selectedProductPrice && (
-                      <p style={{ fontSize: '11px', color: '#4ade80', textDecoration: 'line-through', textDecorationColor: 'rgba(232,230,255,0.3)', color: 'rgba(232,230,255,0.3)' }}>
+                      <p style={{ fontSize: '11px', textDecoration: 'line-through', textDecorationColor: 'rgba(232,230,255,0.3)', color: 'rgba(232,230,255,0.3)' }}>
                         ₹{txn.selectedProductPrice.toLocaleString('en-IN')}
                       </p>
                     )}

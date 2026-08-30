@@ -9,7 +9,7 @@
 // Falls back to DEFAULT_POLICY_CONFIG for anonymous sessions.
 // ============================================================
 
-import type { SqlJsDatabase } from '@/db/connection';
+import { type Database as SqlJsDatabase } from 'sql.js';
 import { DEFAULT_POLICY_CONFIG } from '@/engine/policy-engine';
 import type { PolicyEvaluationInput } from '@/engine/policy-engine';
 import type { MerchantTrustTier } from '@/types/schemas';

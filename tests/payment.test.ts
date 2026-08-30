@@ -94,8 +94,8 @@ describe('Checkout Security Guards', () => {
     const failedPolicy = { overall: 'FAIL' as const, requiresApproval: false, checks: [] };
     const passedPolicy = { overall: 'PASS' as const, requiresApproval: false, checks: [] };
 
-    expect(failedPolicy.overall === 'PASS').toBe(false);
-    expect(passedPolicy.overall === 'PASS').toBe(true);
+    expect((failedPolicy.overall as string) === 'PASS').toBe(false);
+    expect((passedPolicy.overall as string) === 'PASS').toBe(true);
   });
 
   it('should detect duplicate order (idempotency)', () => {
@@ -142,7 +142,7 @@ describe('Payment Verification Guards', () => {
   it('should reject verification when order ID does not match', () => {
     const storedOrderId = 'order_stored123';
     const receivedOrderId = 'order_different456';
-    expect(storedOrderId === receivedOrderId).toBe(false);
+    expect((storedOrderId as string) === receivedOrderId).toBe(false);
   });
 
   it('should accept verification when order ID matches', () => {
@@ -172,7 +172,7 @@ describe('Razorpay Config Validation', () => {
 
   it('should accept valid RAZORPAY_KEY_ID', () => {
     const keyId = 'rzp_test_TSyUitNAzhV3Q2';
-    expect(!keyId || keyId === 'rzp_test_XXXXXXXXXX').toBe(false);
+    expect(!keyId || (keyId as string) === 'rzp_test_XXXXXXXXXX').toBe(false);
   });
 
   it('should detect missing RAZORPAY_KEY_SECRET', () => {
@@ -182,7 +182,7 @@ describe('Razorpay Config Validation', () => {
 
   it('should accept valid RAZORPAY_KEY_SECRET', () => {
     const keySecret = '3GBjJrF5MdmthbNmf5EPQXaE';
-    expect(!keySecret || keySecret === 'XXXXXXXXXXXXXXXXXXXXXXXX').toBe(false);
+    expect(!keySecret || (keySecret as string) === 'XXXXXXXXXXXXXXXXXXXXXXXX').toBe(false);
   });
 });
 

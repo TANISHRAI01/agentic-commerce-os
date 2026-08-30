@@ -216,4 +216,11 @@ function initSchema(database: SqlJsDatabase): void {
   // ── Phase 10C: New customer policy controls (additive — safe on existing DBs) ──
   try { database.run(`ALTER TABLE customer_profiles ADD COLUMN trusted_merchants_only INTEGER NOT NULL DEFAULT 0`); } catch {}
   try { database.run(`ALTER TABLE customer_profiles ADD COLUMN require_approval_first_purchase INTEGER NOT NULL DEFAULT 0`); } catch {}
+
+  // ── Phase 10E: Merchant catalog linkage (additive — safe on existing DBs) ──
+  // Links an auth merchant user to their entry in the catalog `merchants` table.
+  // Null until the merchant creates their first product (auto-created on first write).
+  try { database.run(`ALTER TABLE merchant_profiles ADD COLUMN merchant_catalog_id TEXT`); } catch {}
+  database.run(`CREATE INDEX IF NOT EXISTS idx_merchant_profiles_catalog ON merchant_profiles(merchant_catalog_id)`);
 }
+

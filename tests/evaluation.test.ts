@@ -21,7 +21,7 @@ const MOCK_CATALOG: Product[] = [
   { id: 'prod-031', merchantId: 'merch-005', name: 'Deep Work by Cal Newport', description: 'Focused success in a distracted world', category: 'books', price: 399, currency: 'INR', stock: 200, rating: 4.6, deliveryDays: 1, merchantTrustTier: 'PLATINUM', attributes: { author: 'Cal Newport', genre: 'productivity' }, tags: ['productivity', 'focus', 'work', 'career'], createdAt: '2024-01-01' },
   { id: 'prod-040', merchantId: 'merch-006', name: 'Fitbit Charge 6', description: 'Fitness tracker with GPS and heart rate', category: 'fitness', price: 14999, currency: 'INR', stock: 25, rating: 4.4, deliveryDays: 2, merchantTrustTier: 'BRONZE', attributes: { type: 'fitness-tracker', brand: 'Fitbit', features: 'GPS,HR,Sleep' }, tags: ['tracker', 'smartwatch', 'heart-rate', 'gps'], createdAt: '2024-01-01' },
   { id: 'prod-042', merchantId: 'merch-002', name: 'Noise ColorFit Pro 5', description: 'Smart fitness watch', category: 'fitness', price: 3499, currency: 'INR', stock: 40, rating: 4.1, deliveryDays: 2, merchantTrustTier: 'GOLD', attributes: { type: 'smartwatch', brand: 'Noise', display: 'AMOLED' }, tags: ['smartwatch', 'fitness', 'amoled', 'spo2', 'affordable'], createdAt: '2024-01-01' },
-];
+] as unknown as Product[];
 
 // ── Simulated LLM Responses ─────────────────────────────────
 

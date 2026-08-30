@@ -286,74 +286,351 @@ function OverviewView({
 }
 
 // ─────────────────────────────────────────────────────────────
-// View: Products
+// View: Products (Phase 10E — full management)
 // ─────────────────────────────────────────────────────────────
 
-function ProductsView({ growth }: { growth: GrowthIntelligenceReport | null }) {
-  const [products, setProducts] = useState<CatalogProduct[]>([]);
-  const [loading, setLoading] = useState(true);
+interface OwnProduct {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  stock: number;
+  deliveryDays: number;
+  rating: number;
+  tags: string[];
+  description: string;
+  availability: string;
+  createdAt: string;
+}
 
-  useEffect(() => {
-    fetch('/api/merchants')
+interface AIProductSuggestion {
+  suggestedTags: string[];
+  suggestedDescription: string;
+  suggestedPrice: number;
+  pricingRationale: string;
+  positioningNote: string;
+  searchKeywords: string[];
+}
+
+type ProdSubView = 'list' | 'add' | 'preview';
+
+interface ProductFormData {
+  name: string;
+  description: string;
+  category: string;
+  price: string;
+  stock: string;
+  deliveryDays: string;
+  tags: string;
+}
+
+const EMPTY_FORM: ProductFormData = {
+  name: '', description: '', category: '', price: '', stock: '0', deliveryDays: '7', tags: '',
+};
+
+function InputField({
+  label, id, value, onChange, type = 'text', placeholder = '', hint = '', multiline = false, required = false,
+}: {
+  label: string; id: string; value: string; onChange: (v: string) => void;
+  type?: string; placeholder?: string; hint?: string; multiline?: boolean; required?: boolean;
+}) {
+  const baseStyle: React.CSSProperties = {
+    width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '10px', padding: '10px 12px', color: '#e8e6ff', fontSize: '14px',
+    fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
+  };
+  return (
+    <div style={{ marginBottom: '16px' }}>
+      <label htmlFor={id} style={{ display: 'block', fontSize: '12px', color: 'rgba(232,230,255,0.5)', marginBottom: '6px', fontWeight: 600 }}>
+        {label}{required && <span style={{ color: '#f87171', marginLeft: '4px' }}>*</span>}
+      </label>
+      {multiline
+        ? <textarea id={id} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={4} style={{ ...baseStyle, resize: 'vertical' }} />
+        : <input id={id} type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={baseStyle} />
+      }
+      {hint && <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.3)', marginTop: '4px' }}>{hint}</p>}
+    </div>
+  );
+}
+
+function ProductsView({ growth }: { growth: GrowthIntelligenceReport | null }) {
+  const [subView, setSubView] = useState<ProdSubView>('list');
+  const [products, setProducts] = useState<OwnProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<ProductFormData>(EMPTY_FORM);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [aiSuggestion, setAiSuggestion] = useState<AIProductSuggestion | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [priceDecision, setPriceDecision] = useState<'accepted' | 'rejected' | null>(null);
+  const [editedPrice, setEditedPrice] = useState<string>('');
+
+  const fmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
+
+  const loadProducts = useCallback(() => {
+    setLoading(true);
+    fetch('/api/merchant/products')
       .then(r => r.json())
-      .then(data => {
-        if (data.merchants?.length) {
-          // Fetch catalog from first available merchant
-          return fetch(`/api/merchants/${data.merchants[0].id}/catalog`).then(r => r.json());
-        }
-        return { products: [] };
-      })
-      .then(d => {
-        setProducts(d.products ?? []);
-        setLoading(false);
-      })
+      .then(d => { setProducts(d.products ?? []); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
+
+  useEffect(() => { loadProducts(); }, [loadProducts]);
+
+  const setField = (key: keyof ProductFormData) => (v: string) => setForm(f => ({ ...f, [key]: v }));
+
+  const validateForm = (): string | null => {
+    if (!form.name.trim()) return 'Product name is required';
+    if (!form.description.trim() || form.description.trim().length < 10) return 'Description must be at least 10 characters';
+    if (!form.category.trim()) return 'Category is required';
+    const price = Number(form.price);
+    if (isNaN(price) || price <= 0) return 'Price must be a positive number';
+    const stock = Number(form.stock);
+    if (isNaN(stock) || !Number.isInteger(stock) || stock < 0) return 'Stock must be a non-negative whole number';
+    const delivery = Number(form.deliveryDays);
+    if (isNaN(delivery) || delivery < 1 || delivery > 30) return 'Delivery days must be between 1 and 30';
+    return null;
+  };
+
+  const handleSave = async () => {
+    const err = validateForm();
+    if (err) { setFormError(err); return; }
+    setFormError(null);
+    setSaving(true);
+    const payload = {
+      name: form.name.trim(), description: form.description.trim(), category: form.category.trim(),
+      price: Number(form.price), stock: Number(form.stock), deliveryDays: Number(form.deliveryDays),
+      tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
+    };
+    try {
+      const url = editingId ? `/api/merchant/products/${editingId}` : '/api/merchant/products';
+      const method = editingId ? 'PUT' : 'POST';
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!res.ok) { const d = await res.json(); setFormError(d.error ?? 'Failed to save product'); setSaving(false); return; }
+      loadProducts();
+      setSubView('list');
+      setForm(EMPTY_FORM);
+      setEditingId(null);
+      setAiSuggestion(null);
+      setPriceDecision(null);
+    } catch { setFormError('Network error — could not save product'); }
+    setSaving(false);
+  };
+
+  const handleDeactivate = async (id: string) => {
+    if (!confirm('Deactivate this product? It will no longer be discoverable by AI buyers.')) return;
+    await fetch(`/api/merchant/products/${id}/deactivate`, { method: 'POST' });
+    loadProducts();
+  };
+
+  const handleEdit = (p: OwnProduct) => {
+    setEditingId(p.id);
+    setForm({ name: p.name, description: p.description, category: p.category, price: String(p.price), stock: String(p.stock), deliveryDays: String(p.deliveryDays), tags: p.tags.join(', ') });
+    setAiSuggestion(null); setPriceDecision(null); setFormError(null);
+    setSubView('add');
+  };
+
+  const handleGetAISuggestions = async () => {
+    if (!form.name.trim() || !form.description.trim() || !form.category.trim()) { setAiError('Fill in Name, Description and Category first'); return; }
+    setAiLoading(true); setAiError(null); setPriceDecision(null);
+    try {
+      const res = await fetch('/api/merchant/products/ai-suggest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: form.name, description: form.description, category: form.category, currentPrice: form.price ? Number(form.price) : undefined }) });
+      const d = await res.json();
+      if (!res.ok) setAiError(d.error ?? 'AI suggestions unavailable');
+      else setAiSuggestion(d.suggestion);
+    } catch { setAiError('Could not reach AI service'); }
+    setAiLoading(false);
+  };
 
   const upsellIds = new Set(growth?.upsellOpportunities.map(u => u.id) ?? []);
   const topIds = new Set(growth?.topRecommended.map(t => t.id) ?? []);
 
-  const fmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
-
-  if (loading) return <LoadingPulse />;
-  if (!products.length) return <EmptyState icon="inventory_2" message="No catalog products available." />;
-
-  return (
-    <div>
-      <SectionTitle icon="inventory_2" label="Catalog Products" color="#c3c0ff" />
-      <p style={{ fontSize: '13px', color: 'rgba(232,230,255,0.4)', marginBottom: '20px' }}>
-        {products.length} products in the platform catalog. Badges are AI-derived signals.
-      </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {products.map(p => (
-          <Card key={p.id}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                  <p style={{ fontSize: '15px', fontWeight: 600, color: '#e8e6ff' }}>{p.name}</p>
-                  {topIds.has(p.id) && (
-                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#fbbf24', background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: '20px', padding: '2px 8px' }}>AI TOP PICK</span>
-                  )}
-                  {upsellIds.has(p.id) && (
-                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#c3c0ff', background: 'rgba(195,192,255,0.1)', border: '1px solid rgba(195,192,255,0.25)', borderRadius: '20px', padding: '2px 8px' }}>UPSELL</span>
-                  )}
+  // ── List ─────────────────────────────────────────────────────
+  if (subView === 'list') {
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <SectionTitle icon="inventory_2" label="My Products" color="#c3c0ff" />
+          <button id="add-product-btn" onClick={() => { setForm(EMPTY_FORM); setEditingId(null); setAiSuggestion(null); setFormError(null); setSubView('add'); }} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: '10px', color: '#fbbf24', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add</span> Add Product
+          </button>
+        </div>
+        {loading ? <LoadingPulse /> : products.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'rgba(232,230,255,0.2)', display: 'block', marginBottom: '12px' }}>inventory_2</span>
+            <p style={{ fontSize: '15px', color: 'rgba(232,230,255,0.3)', marginBottom: '16px' }}>No products yet.</p>
+            <button onClick={() => { setForm(EMPTY_FORM); setEditingId(null); setAiSuggestion(null); setFormError(null); setSubView('add'); }} style={{ padding: '10px 24px', background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: '10px', color: '#fbbf24', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Add your first product</button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {products.map(p => (
+              <Card key={p.id}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                      <p style={{ fontSize: '15px', fontWeight: 600, color: '#e8e6ff' }}>{p.name}</p>
+                      {topIds.has(p.id) && <span style={{ fontSize: '10px', fontWeight: 700, color: '#fbbf24', background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: '20px', padding: '2px 8px' }}>AI TOP PICK</span>}
+                      {upsellIds.has(p.id) && <span style={{ fontSize: '10px', fontWeight: 700, color: '#c3c0ff', background: 'rgba(195,192,255,0.1)', border: '1px solid rgba(195,192,255,0.25)', borderRadius: '20px', padding: '2px 8px' }}>UPSELL</span>}
+                      <span style={{ fontSize: '10px', fontWeight: 700, color: p.availability === 'IN_STOCK' ? '#4ade80' : '#f87171', background: p.availability === 'IN_STOCK' ? 'rgba(74,222,128,0.08)' : 'rgba(248,113,113,0.08)', borderRadius: '20px', padding: '2px 8px' }}>{p.availability === 'IN_STOCK' ? 'Active' : 'Inactive'}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)' }}>{p.category}</span>
+                      <span style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)' }}>Stock: {p.stock}</span>
+                      <span style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)' }}>{p.deliveryDays}d delivery</span>
+                      {p.rating > 0 && <span style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)' }}>⭐ {p.rating}</span>}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                    <p style={{ fontSize: '18px', fontWeight: 700, color: '#fbbf24', fontFamily: "'Space Grotesk', sans-serif" }}>{fmt(p.price)}</p>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button id={`edit-product-${p.id}`} onClick={() => handleEdit(p)} style={{ padding: '5px 12px', background: 'rgba(195,192,255,0.08)', border: '1px solid rgba(195,192,255,0.2)', borderRadius: '8px', color: '#c3c0ff', fontSize: '12px', cursor: 'pointer' }}>Edit</button>
+                      {p.availability === 'IN_STOCK' && <button id={`deactivate-product-${p.id}`} onClick={() => handleDeactivate(p.id)} style={{ padding: '5px 12px', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: '8px', color: '#f87171', fontSize: '12px', cursor: 'pointer' }}>Deactivate</button>}
+                    </div>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)' }}>{p.category}</span>
-                  <span style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)' }}>⭐ {p.rating}</span>
-                  <span style={{ fontSize: '12px', color: p.stock > 0 ? '#4ade80' : '#f87171' }}>{p.stock > 0 ? `${p.stock} in stock` : 'Out of stock'}</span>
-                </div>
-              </div>
-              <p style={{ fontSize: '18px', fontWeight: 700, color: '#fbbf24', fontFamily: "'Space Grotesk', sans-serif", whiteSpace: 'nowrap' }}>
-                {fmt(p.price)}
-              </p>
-            </div>
-          </Card>
-        ))}
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  }
+
+  // ── Add / Edit ────────────────────────────────────────────────
+  if (subView === 'add') {
+    return (
+      <div style={{ maxWidth: '580px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+          <button onClick={() => { setSubView('list'); setEditingId(null); setAiSuggestion(null); }} style={{ background: 'none', border: 'none', color: 'rgba(232,230,255,0.5)', cursor: 'pointer', padding: '4px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>arrow_back</span>
+          </button>
+          <SectionTitle icon={editingId ? 'edit' : 'add_box'} label={editingId ? 'Edit Product' : 'Add Product'} color="#c3c0ff" />
+        </div>
+
+        <InputField required id="prod-name" label="Product Name" value={form.name} onChange={setField('name')} placeholder="e.g. Sony WH-1000XM5 Headphones" />
+        <InputField required id="prod-desc" label="Description" value={form.description} onChange={setField('description')} placeholder="Describe the product (min 10 characters)" multiline />
+        <InputField required id="prod-cat" label="Category" value={form.category} onChange={setField('category')} placeholder="e.g. electronics, footwear" />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <InputField required id="prod-price" label="Price (₹)" value={form.price} onChange={setField('price')} type="number" placeholder="e.g. 4999" />
+          <InputField required id="prod-stock" label="Stock" value={form.stock} onChange={setField('stock')} type="number" placeholder="e.g. 50" />
+        </div>
+        <InputField required id="prod-delivery" label="Delivery Days" value={form.deliveryDays} onChange={setField('deliveryDays')} type="number" placeholder="e.g. 5" hint="1–30 days" />
+        <InputField id="prod-tags" label="Tags" value={form.tags} onChange={setField('tags')} placeholder="wireless, noise-cancelling, premium" hint="Comma-separated — helps AI buyers discover your product" />
+
+        {/* AI Suggestions */}
+        <Card style={{ marginBottom: '20px', border: '1px solid rgba(195,192,255,0.12)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#c3c0ff' }}>auto_awesome</span>
+              <p style={{ fontSize: '14px', fontWeight: 700, color: '#c3c0ff' }}>AI Assistant</p>
+            </div>
+            <button id="get-ai-suggestions-btn" onClick={handleGetAISuggestions} disabled={aiLoading} style={{ padding: '7px 14px', background: aiLoading ? 'rgba(195,192,255,0.04)' : 'rgba(195,192,255,0.1)', border: '1px solid rgba(195,192,255,0.25)', borderRadius: '8px', color: aiLoading ? 'rgba(195,192,255,0.4)' : '#c3c0ff', fontSize: '12px', fontWeight: 600, cursor: aiLoading ? 'default' : 'pointer' }}>
+              {aiLoading ? 'Getting suggestions…' : 'Get AI Suggestions'}
+            </button>
+          </div>
+          <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.35)' }}>Fill Name, Description and Category above, then click to get AI-suggested tags, description, and price.</p>
+          {aiError && <p style={{ fontSize: '12px', color: '#f87171', marginTop: '10px' }}>{aiError}</p>}
+
+          {aiSuggestion && (
+            <div style={{ marginTop: '16px' }}>
+              {/* Tags */}
+              <div style={{ marginBottom: '14px' }}>
+                <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.4)', marginBottom: '6px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Suggested Tags</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                  {aiSuggestion.suggestedTags.map(t => <span key={t} style={{ fontSize: '12px', color: '#4ade80', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '20px', padding: '3px 10px' }}>{t}</span>)}
+                </div>
+                <button id="accept-ai-tags" onClick={() => setForm(f => ({ ...f, tags: aiSuggestion.suggestedTags.join(', ') }))} style={{ fontSize: '12px', color: '#4ade80', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '8px', padding: '5px 12px', cursor: 'pointer' }}>Apply Tags</button>
+              </div>
+
+              {/* Description */}
+              <div style={{ marginBottom: '14px' }}>
+                <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.4)', marginBottom: '6px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Suggested Description</p>
+                <p style={{ fontSize: '13px', color: 'rgba(232,230,255,0.6)', lineHeight: 1.5, marginBottom: '8px' }}>{aiSuggestion.suggestedDescription}</p>
+                <button id="accept-ai-description" onClick={() => setForm(f => ({ ...f, description: aiSuggestion.suggestedDescription }))} style={{ fontSize: '12px', color: '#c3c0ff', background: 'rgba(195,192,255,0.08)', border: '1px solid rgba(195,192,255,0.2)', borderRadius: '8px', padding: '5px 12px', cursor: 'pointer' }}>Use This Description</button>
+              </div>
+
+              {/* Price — Accept / Edit / Reject */}
+              <div style={{ padding: '14px', background: 'rgba(251,191,36,0.04)', border: '1px solid rgba(251,191,36,0.15)', borderRadius: '12px' }}>
+                <p style={{ fontSize: '11px', color: 'rgba(251,191,36,0.6)', marginBottom: '6px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Suggested Price</p>
+                <p style={{ fontSize: '22px', fontWeight: 800, color: '#fbbf24', fontFamily: "'Space Grotesk', sans-serif", marginBottom: '4px' }}>{fmt(aiSuggestion.suggestedPrice)}</p>
+                <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.5)', lineHeight: 1.5, marginBottom: '12px' }}>{aiSuggestion.pricingRationale}</p>
+                {priceDecision === null && (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <button id="accept-ai-price" onClick={() => { setForm(f => ({ ...f, price: String(aiSuggestion.suggestedPrice) })); setPriceDecision('accepted'); }} style={{ padding: '7px 16px', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: '8px', color: '#4ade80', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>✓ Accept</button>
+                    <input id="edit-ai-price" type="number" placeholder="Enter custom price" value={editedPrice} onChange={e => setEditedPrice(e.target.value)} style={{ padding: '7px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#e8e6ff', fontSize: '13px', width: '150px', fontFamily: 'inherit', outline: 'none' }} />
+                    <button id="apply-edited-price" onClick={() => { const v = Number(editedPrice); if (v > 0) { setForm(f => ({ ...f, price: String(v) })); setPriceDecision('accepted'); } }} style={{ padding: '7px 14px', background: 'rgba(195,192,255,0.1)', border: '1px solid rgba(195,192,255,0.25)', borderRadius: '8px', color: '#c3c0ff', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Apply Custom</button>
+                    <button id="reject-ai-price" onClick={() => setPriceDecision('rejected')} style={{ padding: '7px 16px', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: '8px', color: '#f87171', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>✕ Reject</button>
+                  </div>
+                )}
+                {priceDecision === 'accepted' && <p style={{ fontSize: '13px', color: '#4ade80' }}>✓ Price applied: {form.price ? fmt(Number(form.price)) : '—'}</p>}
+                {priceDecision === 'rejected' && <p style={{ fontSize: '13px', color: '#f87171' }}>✕ Suggestion rejected. Current price: {form.price ? fmt(Number(form.price)) : 'not set'}</p>}
+              </div>
+
+              {/* Positioning */}
+              <div style={{ marginTop: '12px', padding: '10px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
+                <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.35)', marginBottom: '4px', fontWeight: 600 }}>AI POSITIONING NOTE</p>
+                <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.5)', lineHeight: 1.5 }}>{aiSuggestion.positioningNote}</p>
+              </div>
+            </div>
+          )}
+        </Card>
+
+        {formError && <div style={{ padding: '10px 14px', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: '10px', marginBottom: '16px' }}><p style={{ fontSize: '13px', color: '#f87171' }}>{formError}</p></div>}
+
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button id="preview-product-btn" onClick={() => { const err = validateForm(); if (err) { setFormError(err); return; } setFormError(null); setSubView('preview'); }} style={{ flex: 1, padding: '12px', background: 'rgba(195,192,255,0.08)', border: '1px solid rgba(195,192,255,0.2)', borderRadius: '12px', color: '#c3c0ff', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Preview</button>
+          <button id="save-product-btn" onClick={handleSave} disabled={saving} style={{ flex: 2, padding: '12px', background: saving ? 'rgba(251,191,36,0.04)' : 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: '12px', color: saving ? 'rgba(251,191,36,0.4)' : '#fbbf24', fontSize: '14px', fontWeight: 700, cursor: saving ? 'default' : 'pointer' }}>
+            {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Publish Product'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Preview ───────────────────────────────────────────────────
+  if (subView === 'preview') {
+    const previewTags = form.tags.split(',').map(t => t.trim()).filter(Boolean);
+    return (
+      <div style={{ maxWidth: '580px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+          <button onClick={() => setSubView('add')} style={{ background: 'none', border: 'none', color: 'rgba(232,230,255,0.5)', cursor: 'pointer', padding: '4px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>arrow_back</span>
+          </button>
+          <SectionTitle icon="visibility" label="Product Preview" color="#4ade80" />
+        </div>
+        <p style={{ fontSize: '12px', color: 'rgba(74,222,128,0.6)', marginBottom: '20px' }}>This is how the AI Buyer will see your product after publishing.</p>
+        <Card style={{ marginBottom: '16px', border: '1px solid rgba(74,222,128,0.15)' }}>
+          <p style={{ fontSize: '22px', fontWeight: 800, color: '#e8e6ff', fontFamily: "'Space Grotesk', sans-serif", marginBottom: '8px' }}>{form.name || '—'}</p>
+          <p style={{ fontSize: '24px', fontWeight: 700, color: '#fbbf24', fontFamily: "'Space Grotesk', sans-serif", marginBottom: '12px' }}>{form.price ? fmt(Number(form.price)) : '—'}</p>
+          <p style={{ fontSize: '14px', color: 'rgba(232,230,255,0.6)', lineHeight: 1.6, marginBottom: '16px' }}>{form.description || '—'}</p>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' }}>
+            <span style={{ fontSize: '13px', color: 'rgba(232,230,255,0.5)' }}>Category: <strong style={{ color: '#e8e6ff' }}>{form.category || '—'}</strong></span>
+            <span style={{ fontSize: '13px', color: 'rgba(232,230,255,0.5)' }}>Stock: <strong style={{ color: '#e8e6ff' }}>{form.stock}</strong></span>
+            <span style={{ fontSize: '13px', color: 'rgba(232,230,255,0.5)' }}>Delivery: <strong style={{ color: '#e8e6ff' }}>{form.deliveryDays} days</strong></span>
+          </div>
+          {previewTags.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {previewTags.map(t => <span key={t} style={{ fontSize: '11px', color: 'rgba(232,230,255,0.5)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '3px 10px' }}>{t}</span>)}
+            </div>
+          )}
+        </Card>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={() => setSubView('add')} style={{ flex: 1, padding: '12px', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: 'rgba(232,230,255,0.5)', fontSize: '14px', cursor: 'pointer' }}>Back to Edit</button>
+          <button id="publish-from-preview-btn" onClick={handleSave} disabled={saving} style={{ flex: 2, padding: '12px', background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: '12px', color: '#4ade80', fontSize: '14px', fontWeight: 700, cursor: saving ? 'default' : 'pointer' }}>
+            {saving ? 'Publishing…' : editingId ? 'Save Changes' : '✓ Publish Product'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }
+
+
+
 
 // ─────────────────────────────────────────────────────────────
 // View: AI Growth

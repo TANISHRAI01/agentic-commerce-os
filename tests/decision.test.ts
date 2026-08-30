@@ -58,7 +58,7 @@ const MOCK_CANDIDATES: Product[] = [
     tags: ['wireless', 'bass', 'budget', 'bluetooth', 'over-ear'],
     createdAt: '2024-01-01',
   },
-];
+] as unknown as Product[];
 
 // ── Schema Validation Tests ──────────────────────────────────
 

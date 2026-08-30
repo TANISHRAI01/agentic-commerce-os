@@ -51,6 +51,48 @@ export const ProductSchema = z.object({
 });
 export type Product = z.infer<typeof ProductSchema>;
 
+// ── Phase 10E: Product Create (merchant-submitted) ────────────
+export const ProductCreateSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(200, 'Name too long'),
+  description: z.string().min(10, 'Description must be at least 10 characters'),
+  category: z.string().min(1, 'Category is required'),
+  price: z.number().positive('Price must be greater than 0'),
+  currency: z.string().default('INR'),
+  stock: z.number().int('Stock must be a whole number').min(0, 'Stock cannot be negative'),
+  deliveryDays: z.number().int().min(1, 'Delivery days must be at least 1').max(30, 'Delivery days cannot exceed 30'),
+  tags: z.array(z.string()).default([]),
+  attributes: z.record(z.string(), z.string()).default({}),
+  imageUrl: z.string().url().optional().or(z.literal('')),
+});
+export type ProductCreate = z.infer<typeof ProductCreateSchema>;
+
+// ── Phase 10E: Product Update (partial, merchant-submitted) ───
+export const ProductUpdateSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  description: z.string().min(10).optional(),
+  category: z.string().min(1).optional(),
+  price: z.number().positive().optional(),
+  currency: z.string().optional(),
+  stock: z.number().int().min(0).optional(),
+  deliveryDays: z.number().int().min(1).max(30).optional(),
+  tags: z.array(z.string()).optional(),
+  attributes: z.record(z.string(), z.string()).optional(),
+  imageUrl: z.string().url().optional().or(z.literal('')),
+  active: z.boolean().optional(),
+});
+export type ProductUpdate = z.infer<typeof ProductUpdateSchema>;
+
+// ── Phase 10E: AI Product Suggestion (LLM structured output) ──
+export const AIProductSuggestionSchema = z.object({
+  suggestedTags: z.array(z.string()).min(1).max(10),
+  suggestedDescription: z.string().min(10),
+  suggestedPrice: z.number().positive(),
+  pricingRationale: z.string().min(5),
+  positioningNote: z.string().min(5),
+  searchKeywords: z.array(z.string()).min(1).max(10),
+});
+export type AIProductSuggestion = z.infer<typeof AIProductSuggestionSchema>;
+
 // ── User ─────────────────────────────────────────────────────
 export const UserSchema = z.object({
   id: z.string(),

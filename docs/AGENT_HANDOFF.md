@@ -2,7 +2,7 @@
 
 > **What exists, what was decided, what remains, assumptions, and risks.**
 >
-> Updated at: Phase 9 completion (all phases complete).
+> Updated at: Phase 10E completion.
 
 ---
 
@@ -26,13 +26,15 @@
 - **ApprovalDialog UI** — Product summary + policy results + Approve/Reject buttons
 - **Conversational UI** — Chat interface with product cards, ranking explanation, policy panel, audit trail
 - **DemoPanel** — Fast-forward tests of success, failure, and policy approval flows
-- **238 passing tests** across 12 test suites
+- **Role-Based Auth** — Customer and Merchant dashboards with protected routes
+- **Customer Limits** — Authoritative policy controls linked to UI toggles
+- **Merchant Product Management** — UI and APIs for catalog CRUD with AI suggestions
+- **382 passing tests** across 13 test suites
 
 ### What Does NOT Exist Yet
 
 - Production database (currently using local SQLite)
-- Auth / multi-tenancy
-- All 9 phases are complete. No outstanding features from the phase plan.
+- All post-phase-9 phases (10A-10E) are complete. No outstanding features from the phase plan.
 
 ---
 

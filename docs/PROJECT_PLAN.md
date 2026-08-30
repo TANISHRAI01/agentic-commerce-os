@@ -270,3 +270,21 @@
 - [x] Zero regression — all 353 Phase 1-10C tests still pass (375 total)
 
 **Definition of Done:** ✅ Merchant dashboard live at `/merchant`. All 6 views work. AI Growth Intelligence fully integrated. Demo data labeled. Role isolation enforced by middleware.
+
+---
+
+### Phase 10E — Merchant Product Management ✅
+
+**Goal:** Implement full product catalog management for merchants (CRUD, AI-assisted suggestions, ownership enforcement).
+
+**Deliverables:**
+- [x] `connection.ts` — additive migration: merchant_catalog_id on merchant_profiles
+- [x] `schemas.ts` — ProductCreateSchema, ProductUpdateSchema, AIProductSuggestionSchema
+- [x] `src/services/merchant-catalog.ts` — CRUD functions with ownership enforcement
+- [x] `src/app/api/merchant/products/...` — API routes for listing, creating, updating, deactivating products
+- [x] `src/app/api/merchant/products/ai-suggest/route.ts` — AI product metadata and price suggestion
+- [x] `page.tsx` — replace ProductsView with management UI (list, add form, AI suggest, preview)
+- [x] `tests/merchant-product.test.ts` — 7 new tests for CRUD and ownership
+- [x] Zero regression — all 375 Phase 1-10D tests still pass (382 total)
+
+**Definition of Done:** ✅ Merchant can create, update, and deactivate products. AI suggestions work but require explicit approval before save. 
