@@ -34,9 +34,11 @@
 | 10C — Customer Spending & AI Limits | ✅ Complete |
 | 10D — Merchant Dashboard | ✅ Complete |
 | 10E — Merchant Product Management | ✅ Complete |
+| 10G — Customer ↔ Merchant Integration | ✅ Complete |
+| 10H — Final UI/UX Redesign | ✅ Complete |
 
-**Last completed phase:** 10E
-**382 tests passing. Merchant product catalog management live.**
+**Last completed phase:** 10H — Final UI/UX Redesign
+**384 tests passing. Full AI commerce system live with polished UI.**
 
 ---
 
@@ -138,7 +140,9 @@ See `docs/AGENT_HANDOFF.md` for full details.
 
 ## What To Do Next
 
-*All phases (1–10A) complete. System is demo-ready with full auth.*
+*All phases (1–10H) complete. System is fully demo-ready.*
+
+**Next optional stretch:** Phase 10I — Final Hackathon Polish (demo video, README hero, Vercel deploy).
 
 ### Phase 10A — Role-Based Auth & User Profiles ✅ Complete
 - **Auth Types** (`src/types/auth.ts`): Zod schemas — `UserRole`, `AuthUserSchema`, `CustomerProfileSchema`, `MerchantProfileSchema`, `SignupRequestSchema` (discriminated union), `LoginRequestSchema`, `SessionPayloadSchema`
@@ -150,6 +154,29 @@ See `docs/AGENT_HANDOFF.md` for full details.
 - **AuthProvider** (`src/app/components/AuthProvider.tsx`): React context for session state, `useAuth()` hook
 - **Tests**: 27 new tests in `tests/auth.test.ts`. **Total: 316 tests passing.**
 - **Zero regression**: All 289 Phase 1–9 tests unchanged and still passing
+
+### Phase 10B–10E — Customer & Merchant Dashboards ✅ Complete
+- Full Customer Dashboard (`/customer`): Home, Shop (AI Buyer), History, Spending, Activity, Profile views
+- Full Merchant Dashboard (`/merchant`): Overview, Products, AI Growth, Orders, Analytics, Settings views
+- Customer spending limits, AI spending enforcement, policy UI
+- Merchant product CRUD (`/api/merchant/products`) with AI suggestions for pricing/tags
+- **Total: 384 tests passing**
+
+### Phase 10G — Customer ↔ Merchant Integration ✅ Complete
+- Shared transaction/order model: customer sees "My order", merchant sees "Customer order"
+- Unified order lifecycle: both dashboards use the same underlying transaction rows
+- IDOR/idempotency fixes applied to all shared routes
+- Privacy separation enforced: customer cannot see merchant private fields
+- `GET /api/merchant/orders` returns only the authenticated merchant’s orders
+- `GET /api/customer/orders` returns only the authenticated customer’s orders
+
+### Phase 10H — Final UI/UX Redesign ✅ Complete
+- **Design System** (`src/app/globals.css`): Complete token-based CSS with `--brand`, `--brand-merchant`, surfaces, text hierarchy, spacing, radius, status colors
+- **Component classes**: `.card`, `.stat-card`, `.btn-*`, `.badge-*`, `.form-input`, `.sidebar-nav-item`, `.spinner`, `.progress-track/fill`, `.chat-input-bar`, `.ai-chip`, `.fade-up/.delay-*`, `.empty-state`
+- **Root page** (`/`): Polished landing with auto-redirect for logged-in users, animated orbs, hero CTAs
+- **Auth pages**: Role toggle, demo credential fill, password strength bar, OG meta tags
+- **Customer dashboard**: Staggered animations, stat-card metrics, chat-input-bar, ai-chip suggestions, progress bars
+- **Merchant dashboard**: Amber identity, Add Product CTA in header, stat-card metrics, active-merchant nav state
 
 
 ## Key Architecture Rules (Do NOT Violate)
@@ -207,28 +234,27 @@ See `docs/AGENT_HANDOFF.md` for full details.
 
 ```bash
 npm run dev      # Start dev server (localhost:3000)
-npm test         # Run all tests (289 passing)
+npm test         # Run all tests (384 passing)
 npm run seed     # Seed the database with 60 products
 npm run build    # Build for production
 
-# Phase 5 test scenarios (set env var before npm run dev):
-# PAYMENT_SIM_MODE=TIMEOUT_THEN_SUCCESS npm run dev
-# PAYMENT_SIM_MODE=TIMEOUT_THEN_FAILURE npm run dev
-# PAYMENT_SIM_MODE=VERIFICATION_ERROR   npm run dev
+# Demo flows:
+# 1. Go to localhost:3000 (landing page)
+# 2. Click "Shop as Customer" → login with tanish@example.com / password123
+# 3. Go to Shop tab → type "noise cancelling headphones under ₹8000"
+# 4. Watch: intent → AI discovers → negotiation → approval → Razorpay checkout
+# 5. Go to History to see the order
 
-# Phase 8 — Test Merchant Dashboard:
-# 1. npm run dev
-# 2. Click "📊 Dashboard" tab in header
-# 3. Browse Top Products, Upsell, Cross-sell, Abandoned, Campaigns tabs
-
-# Phase 9 — Demo Negotiation:
-# 1. npm run dev
-# 2. Type: "Find me noise-cancelling headphones under ₹8,000"
-# 3. Watch the NegotiationPanel animate after product selection
-# 4. Audit trail shows: NEGOTIATION_STARTED → NEGOTIATION_ROUND → NEGOTIATION_COMPLETE
+# Merchant demo:
+# 1. Go to localhost:3000 → "Run a Shop"
+# 2. Login with merchant@example.com / password123
+# 3. Overview shows revenue, orders, AI growth snapshot
+# 4. Products tab: add/edit products with AI suggestions
+# 5. AI Growth tab: upsell/cross-sell/campaign signals
+# 6. Orders tab: see customer orders
 ```
 
 ---
 
-*Last updated: Phase 10D completion — all phases complete.*
+*Last updated: Phase 10H completion — Full AI commerce system live with polished UI.*
 *Update this file at the end of every phase.*

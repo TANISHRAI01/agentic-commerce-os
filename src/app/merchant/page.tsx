@@ -163,12 +163,7 @@ function EmptyState({ icon, message }: { icon: string; message: string }) {
 function LoadingPulse() {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
-      <div style={{
-        width: '32px', height: '32px', borderRadius: '50%',
-        border: '3px solid rgba(251,191,36,0.2)',
-        borderTop: '3px solid #fbbf24',
-        animation: 'spin 0.8s linear infinite',
-      }} />
+      <div className="spinner" style={{ width: '32px', height: '32px', color: 'var(--brand-merchant)' }} />
     </div>
   );
 }
@@ -200,48 +195,47 @@ function OverviewView({
   return (
     <div>
       {/* Welcome */}
-      <div style={{ marginBottom: '32px' }}>
-        <p style={{ fontSize: '13px', color: 'rgba(251,191,36,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Merchant Portal</p>
-        <h1 style={{ fontSize: '34px', fontWeight: 800, color: '#e8e6ff', fontFamily: "'Space Grotesk', sans-serif", marginBottom: '4px' }}>
-          {merchantProfile?.shopName ?? 'Your Shop'}
-        </h1>
-        {merchantProfile?.category && (
-          <span style={{ fontSize: '12px', color: 'rgba(232,230,255,0.5)', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '4px 12px' }}>
-            {merchantProfile.category}
-          </span>
-        )}
+      <div className="fade-up" style={{ marginBottom: '32px' }}>
+        <p style={{ fontSize: '13px', color: 'var(--brand-merchant)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px', fontWeight: 600 }}>Merchant Portal</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <h1 className="font-display" style={{ fontSize: '34px', color: 'var(--text-1)' }}>
+            {merchantProfile?.shopName ?? 'Your Shop'}
+          </h1>
+          {merchantProfile?.category && (
+            <span className="badge badge-neutral">{merchantProfile.category}</span>
+          )}
+        </div>
       </div>
 
       {/* Trust Tier + Revenue Banner */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-        <Card>
-          <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', marginBottom: '6px' }}>Trust Tier</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '24px', color: tierColor }}>verified_user</span>
-            <p style={{ fontSize: '26px', fontWeight: 800, color: tierColor, fontFamily: "'Space Grotesk', sans-serif" }}>
-              {merchantProfile?.trustTier ?? 'UNRATED'}
-            </p>
+      <div className="fade-up delay-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+        <div className="stat-card">
+          <div className="stat-label">
+            <span className="material-symbols-outlined" style={{ fontSize: '15px', color: 'var(--brand-merchant)' }}>verified_user</span>
+            Trust Tier
           </div>
-        </Card>
-        <Card>
-          <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', marginBottom: '6px' }}>Completed Revenue</p>
-          <p style={{ fontSize: '26px', fontWeight: 800, color: '#4ade80', fontFamily: "'Space Grotesk', sans-serif" }}>
-            {stats ? fmt(stats.totalRevenue) : '—'}
-          </p>
-          <DemoTag text="Demo transactions only" />
-        </Card>
+          <p className="stat-value" style={{ color: tierColor }}>{merchantProfile?.trustTier ?? 'UNRATED'}</p>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">
+            <span className="material-symbols-outlined" style={{ fontSize: '15px', color: 'var(--green)' }}>payments</span>
+            Completed Revenue
+          </div>
+          <p className="stat-value" style={{ color: 'var(--green)' }}>{stats ? fmt(stats.totalRevenue) : '—'}</p>
+          <p style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '4px', fontStyle: 'italic' }}>Demo transactions only</p>
+        </div>
       </div>
 
       {/* Stat Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+      <div className="fade-up delay-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '24px' }}>
         {statCards.map(sc => (
-          <Card key={sc.label}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: sc.color }}>{sc.icon}</span>
-              <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)' }}>{sc.label}</p>
+          <div key={sc.label} className="stat-card">
+            <div className="stat-label">
+              <span className="material-symbols-outlined" style={{ fontSize: '15px', color: sc.color }}>{sc.icon}</span>
+              {sc.label}
             </div>
-            <p style={{ fontSize: '28px', fontWeight: 800, color: sc.color, fontFamily: "'Space Grotesk', sans-serif" }}>{sc.value}</p>
-          </Card>
+            <p className="stat-value" style={{ color: sc.color }}>{sc.value}</p>
+          </div>
         ))}
       </div>
 
@@ -1183,12 +1177,8 @@ export default function MerchantDashboard() {
 
   if (isLoading || !user) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f0f14' }}>
-        <div style={{
-          width: '32px', height: '32px', borderRadius: '50%',
-          border: '3px solid rgba(251,191,36,0.2)', borderTop: '3px solid #fbbf24',
-          animation: 'spin 0.8s linear infinite',
-        }} />
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surf-0)' }}>
+        <div className="spinner" style={{ width: '32px', height: '32px', color: 'var(--brand-merchant)' }} />
       </div>
     );
   }
@@ -1196,13 +1186,13 @@ export default function MerchantDashboard() {
   const SIDEBAR_W = 220;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f0f14', fontFamily: "'Geist', 'Inter', sans-serif", display: 'flex' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--surf-0)', display: 'flex' }}>
       {/* Sidebar */}
       <aside style={{
         width: SIDEBAR_W,
         flexShrink: 0,
-        background: 'rgba(12,12,18,0.95)',
-        borderRight: '1px solid rgba(255,255,255,0.05)',
+        background: 'rgba(10,10,18,0.97)',
+        borderRight: '1px solid var(--border)',
         display: 'flex',
         flexDirection: 'column',
         position: 'fixed',
@@ -1210,47 +1200,43 @@ export default function MerchantDashboard() {
         left: sidebarOpen ? 0 : `-${SIDEBAR_W}px`,
         height: '100vh',
         zIndex: 50,
-        transition: 'left 0.25s ease',
+        transition: 'left 0.25s cubic-bezier(0.4,0,0.2,1)',
       }}>
         {/* Sidebar header */}
-        <div style={{ padding: '24px 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#fbbf24' }}>storefront</span>
-            <span style={{ fontSize: '14px', fontWeight: 700, color: '#fbbf24' }}>Merchant Portal</span>
+        <div style={{ padding: '20px 16px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--brand-merchant-dim)', border: '1px solid var(--brand-merchant-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--brand-merchant)' }}>storefront</span>
+            </div>
+            <div>
+              <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--brand-merchant)', lineHeight: 1.2 }}>Merchant Portal</p>
+              <p style={{ fontSize: '10px', color: 'var(--text-3)' }}>AI Commerce OS</p>
+            </div>
           </div>
-          <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', paddingLeft: '28px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <p style={{ fontSize: '12px', color: 'var(--text-2)', marginTop: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {merchantProfile?.shopName ?? user.name}
           </p>
         </div>
 
         {/* Nav items */}
-        <nav style={{ flex: 1, padding: '12px 10px' }}>
+        <nav style={{ flex: 1, padding: '10px 8px' }}>
           {NAV_ITEMS.map(item => (
             <button
               key={item.id}
               id={`nav-${item.id}`}
               onClick={() => { setActiveView(item.id); setSidebarOpen(false); }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                width: '100%', padding: '10px 12px', borderRadius: '10px',
-                border: 'none', cursor: 'pointer', marginBottom: '2px',
-                background: activeView === item.id ? 'rgba(251,191,36,0.1)' : 'transparent',
-                color: activeView === item.id ? '#fbbf24' : 'rgba(232,230,255,0.5)',
-                transition: 'all 0.15s',
-              }}
+              className={`sidebar-nav-item ${activeView === item.id ? 'active-merchant' : ''}`}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{item.icon}</span>
-              <span style={{ fontSize: '14px', fontWeight: activeView === item.id ? 700 : 400 }}>{item.label}</span>
+              <span className="material-symbols-outlined nav-icon" style={{ fontVariationSettings: activeView === item.id ? "'FILL' 1" : "'FILL' 0" }}>{item.icon}</span>
+              <span>{item.label}</span>
             </button>
           ))}
         </nav>
 
-        {/* Tier badge */}
-        <div style={{ padding: '16px 20px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '16px', color: tierColor }}>verified_user</span>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: tierColor }}>{merchantProfile?.trustTier ?? 'UNRATED'}</span>
-          </div>
+        {/* Tier badge at bottom */}
+        <div style={{ padding: '14px 16px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '16px', color: tierColor }}>verified_user</span>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: tierColor }}>{merchantProfile?.trustTier ?? 'UNRATED'}</span>
         </div>
       </aside>
 
@@ -1267,9 +1253,9 @@ export default function MerchantDashboard() {
         {/* Top bar */}
         <header style={{
           position: 'sticky', top: 0, zIndex: 30,
-          background: 'rgba(15,15,20,0.9)',
-          backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          background: 'rgba(10,10,18,0.9)',
+          backdropFilter: 'blur(16px)',
+          borderBottom: '1px solid var(--border)',
           padding: '0 24px',
           height: '56px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -1277,31 +1263,41 @@ export default function MerchantDashboard() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button
               onClick={() => setSidebarOpen(true)}
-              style={{ background: 'none', border: 'none', color: 'rgba(232,230,255,0.5)', cursor: 'pointer', padding: '4px' }}
+              className="btn btn-ghost btn-icon"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>menu</span>
+              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>menu</span>
             </button>
-            <span style={{ fontSize: '15px', fontWeight: 600, color: '#e8e6ff' }}>
+            <span className="font-heading" style={{ fontSize: '15px', color: 'var(--text-1)' }}>
               {NAV_ITEMS.find(n => n.id === activeView)?.label}
             </span>
           </div>
-          <button
-            id="merchant-logout-btn"
-            onClick={logout}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '6px 12px', color: 'rgba(232,230,255,0.4)', cursor: 'pointer', fontSize: '13px' }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>logout</span>
-            Logout
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {activeView !== 'products' && (
+              <button
+                id="merchant-new-product-btn"
+                onClick={() => setActiveView('products')}
+                className="btn btn-merchant btn-sm"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>add</span>
+                Add Product
+              </button>
+            )}
+            <div style={{ fontSize: '11px', color: 'var(--text-3)', background: 'var(--surf-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-full)', padding: '4px 12px' }}>
+              Phase 10H
+            </div>
+            <button
+              id="merchant-logout-btn"
+              onClick={logout}
+              className="btn btn-ghost btn-sm"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>logout</span>
+              Logout
+            </button>
+          </div>
         </header>
 
         {/* Page content */}
-        <main style={{ flex: 1, padding: '28px 28px', maxWidth: '880px', width: '100%' }}>
-          <style>{`
-            @keyframes spin { to { transform: rotate(360deg); } }
-            * { box-sizing: border-box; margin: 0; padding: 0; }
-            button { font-family: inherit; }
-          `}</style>
+        <main style={{ flex: 1, padding: '28px 28px', maxWidth: '920px', width: '100%' }}>
 
           {activeView === 'overview' && (
             <OverviewView stats={stats} growth={growth} merchantProfile={merchantProfile} tierColor={tierColor} />

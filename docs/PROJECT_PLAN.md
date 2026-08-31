@@ -19,7 +19,14 @@
 | 6 | Audit + Premium UX | ✅ Complete | `phase-6` | Audit timeline, metrics, demo mode, polish |
 | 7 | AI-readable Catalog | ✅ Complete | `phase-7` | Structured catalog intelligence, merchant APIs |
 | 8 | Merchant Agent + Growth | ✅ Complete | `phase-8` | Upsell/cross-sell, merchant agent, growth dashboard, 278 tests passing |
-| 9 | Agent-to-Agent Commerce | 🔲 Stretch | — | Buyer ↔ merchant negotiation |
+| 9 | Agent-to-Agent Commerce | ✅ Complete | `phase-9` | Buyer ↔ merchant negotiation, 289 tests passing |
+| 10A | Role-Based Auth | ✅ Complete | — | JWT sessions, bcrypt, middleware protection, 316 tests |
+| 10B | Customer Dashboard | ✅ Complete | — | Full SPA: Home, Shop, History, Spending, Activity, Profile |
+| 10C | Customer Spending & AI Limits | ✅ Complete | — | Policy enforcement, spending UI |
+| 10D | Merchant Dashboard | ✅ Complete | — | Overview, Growth, Orders, Analytics, Settings |
+| 10E | Merchant Product Management | ✅ Complete | — | CRUD + AI suggestions, 384 tests passing |
+| 10G | Customer ↔ Merchant Integration | ✅ Complete | — | Shared orders, IDOR fixes, privacy separation |
+| 10H | Final UI/UX Redesign | ✅ Complete | — | Design system, polished landing, auth, dashboards |
 
 ---
 

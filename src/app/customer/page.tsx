@@ -121,24 +121,20 @@ function formatTime(iso: string) {
 
 function Spinner() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px' }}>
-      <div className="btn-spinner" style={{ width: '28px', height: '28px', borderColor: '#c3c0ff', borderTopColor: 'transparent' }} />
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '56px' }}>
+      <div className="spinner" style={{ width: '28px', height: '28px', color: 'var(--brand)' }} />
     </div>
   );
 }
 
 function EmptyState({ icon, title, sub, cta, onCta }: { icon: string; title: string; sub: string; cta?: string; onCta?: () => void }) {
   return (
-    <div style={{ textAlign: 'center', padding: '64px 24px' }}>
-      <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'rgba(195,192,255,0.2)', marginBottom: '16px', display: 'block' }}>{icon}</span>
-      <p style={{ fontSize: '18px', fontWeight: 700, color: 'rgba(232,230,255,0.7)', marginBottom: '8px', fontFamily: "'Space Grotesk', sans-serif" }}>{title}</p>
-      <p style={{ fontSize: '14px', color: 'rgba(232,230,255,0.35)', marginBottom: cta ? '24px' : 0 }}>{sub}</p>
+    <div className="empty-state fade-in">
+      <span className="material-symbols-outlined empty-state-icon">{icon}</span>
+      <p className="empty-state-title">{title}</p>
+      <p className="empty-state-sub">{sub}</p>
       {cta && (
-        <button onClick={onCta} style={{
-          background: 'rgba(195,192,255,0.12)', border: '1px solid rgba(195,192,255,0.25)',
-          borderRadius: '12px', padding: '10px 24px', color: '#c3c0ff',
-          fontSize: '14px', fontWeight: 600, cursor: 'pointer',
-        }}>{cta}</button>
+        <button onClick={onCta} className="btn btn-primary" style={{ marginTop: '8px' }}>{cta}</button>
       )}
     </div>
   );
@@ -175,80 +171,91 @@ function HomeView({
   const barColor = pct > 85 ? '#f87171' : pct > 60 ? '#fbbf24' : '#4ade80';
 
   const card = (icon: string, label: string, value: string, color: string) => (
-    <div style={{ background: 'rgba(18,18,28,0.6)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '20px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-        <span className="material-symbols-outlined" style={{ fontSize: '18px', color }}>{icon}</span>
-        <span style={{ fontSize: '12px', color: 'rgba(232,230,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+    <div className="stat-card">
+      <div className="stat-label">
+        <span className="material-symbols-outlined" style={{ fontSize: '16px', color }}>{icon}</span>
+        {label}
       </div>
-      <p style={{ fontSize: '26px', fontWeight: 700, color: '#e8e6ff', fontFamily: "'Space Grotesk', sans-serif" }}>{value}</p>
+      <p className="stat-value">{value}</p>
     </div>
   );
 
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto' }}>
       {/* Greeting */}
-      <div style={{ marginBottom: '32px' }}>
-        <p style={{ fontSize: '14px', color: 'rgba(195,192,255,0.6)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{greeting}</p>
-        <h1 style={{ fontSize: '36px', fontWeight: 800, color: '#e8e6ff', fontFamily: "'Space Grotesk', sans-serif", lineHeight: 1.1 }}>
-          {firstName} <span style={{ color: 'rgba(232,230,255,0.35)', fontWeight: 400 }}>👋</span>
+      <div className="fade-up" style={{ marginBottom: '32px' }}>
+        <p style={{ fontSize: '13px', color: 'var(--brand)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>{greeting}</p>
+        <h1 className="font-display" style={{ fontSize: '36px', color: 'var(--text-1)', lineHeight: 1.1 }}>
+          {firstName} <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>👋</span>
         </h1>
       </div>
 
       {/* Spending Progress */}
-      <div style={{ background: 'rgba(18,18,28,0.6)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '24px', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '14px' }}>
+      <div className="card fade-up delay-1" style={{ marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
           <div>
-            <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '4px' }}>This Month's Spending</p>
-            <p style={{ fontSize: '28px', fontWeight: 700, color: '#e8e6ff', fontFamily: "'Space Grotesk', sans-serif" }}>
+            <p className="stat-label">This Month&apos;s Spending</p>
+            <p className="font-display" style={{ fontSize: '30px', color: 'var(--text-1)' }}>
               ₹{spent.toLocaleString('en-IN')}
-              <span style={{ fontSize: '16px', color: 'rgba(232,230,255,0.4)', fontWeight: 400 }}> / ₹{limit.toLocaleString('en-IN')}</span>
+              <span style={{ fontSize: '16px', color: 'var(--text-2)', fontWeight: 400 }}> / ₹{limit.toLocaleString('en-IN')}</span>
             </p>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', marginBottom: '4px' }}>Remaining</p>
-            <p style={{ fontSize: '20px', fontWeight: 700, color: barColor, fontFamily: "'Space Grotesk', sans-serif" }}>
+            <p className="stat-label">Remaining</p>
+            <p className="font-heading" style={{ fontSize: '22px', color: barColor }}>
               ₹{Math.max(0, limit - spent).toLocaleString('en-IN')}
             </p>
           </div>
         </div>
-        <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: '4px', transition: 'width 0.6s ease' }} />
+        <div className="progress-track">
+          <div className="progress-fill" style={{ width: `${pct}%`, background: barColor }} />
         </div>
-        <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.3)', marginTop: '8px' }}>{pct.toFixed(0)}% of monthly limit used</p>
+        <p style={{ fontSize: '12px', color: 'var(--text-3)', marginTop: '8px' }}>{pct.toFixed(0)}% of monthly limit used</p>
       </div>
 
       {/* Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}>
-        {card('check_circle', 'Purchases', statsLoading ? '—' : String(stats?.completedPurchases ?? 0), '#4ade80')}
-        {card('pending', 'Pending Approvals', statsLoading ? '—' : String(stats?.pendingApprovals ?? 0), '#fbbf24')}
-        {card('receipt_long', 'All Sessions', statsLoading ? '—' : String(stats?.totalTransactions ?? 0), '#c3c0ff')}
+      <div className="fade-up delay-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}>
+        {card('check_circle', 'Purchases', statsLoading ? '—' : String(stats?.completedPurchases ?? 0), 'var(--green)')}
+        {card('pending', 'Pending Approvals', statsLoading ? '—' : String(stats?.pendingApprovals ?? 0), 'var(--yellow)')}
+        {card('receipt_long', 'All Sessions', statsLoading ? '—' : String(stats?.totalTransactions ?? 0), 'var(--brand)')}
       </div>
 
       {/* CTA */}
       <button
         id="home-start-shopping-btn"
+        className="fade-up delay-3"
         onClick={() => onNavigate('shop')}
         style={{
-          width: '100%', padding: '18px', borderRadius: '16px', border: '1px solid rgba(195,192,255,0.25)',
-          background: 'linear-gradient(135deg, rgba(195,192,255,0.12), rgba(195,192,255,0.04))',
+          width: '100%', padding: '18px 22px', borderRadius: 'var(--r-xl)',
+          border: '1px solid var(--brand-border)',
+          background: 'linear-gradient(135deg, var(--brand-dim), rgba(195,192,255,0.04))',
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           marginBottom: '32px', transition: 'all 0.2s',
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(195,192,255,0.5)'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(195,192,255,0.25)'; }}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand)';
+          (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 24px rgba(195,192,255,0.12)';
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand-border)';
+          (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
+        }}
       >
         <div style={{ textAlign: 'left' }}>
-          <p style={{ fontSize: '16px', fontWeight: 700, color: '#e8e6ff', marginBottom: '4px', fontFamily: "'Space Grotesk', sans-serif" }}>Start Shopping with AI</p>
-          <p style={{ fontSize: '13px', color: 'rgba(232,230,255,0.45)' }}>Natural language → Agent negotiation → Checkout</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--brand)' }}>smart_toy</span>
+            <p className="font-heading" style={{ fontSize: '15px', color: 'var(--text-1)' }}>Start Shopping with AI</p>
+          </div>
+          <p style={{ fontSize: '13px', color: 'var(--text-2)', paddingLeft: '26px' }}>Natural language → Agent negotiation → Checkout</p>
         </div>
-        <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#c3c0ff' }}>arrow_forward</span>
+        <span className="material-symbols-outlined" style={{ fontSize: '22px', color: 'var(--brand)' }}>arrow_forward</span>
       </button>
 
       {/* Recent Purchases */}
-      <div style={{ marginBottom: '32px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'rgba(232,230,255,0.8)', fontFamily: "'Space Grotesk', sans-serif" }}>Recent Purchases</h2>
-          <button onClick={() => onNavigate('history')} style={{ background: 'none', border: 'none', color: '#c3c0ff', fontSize: '13px', cursor: 'pointer' }}>View all →</button>
+      <div className="fade-up delay-4" style={{ marginBottom: '32px' }}>
+        <div className="section-header">
+          <h2 className="section-title">Recent Purchases</h2>
+          <button className="section-link" onClick={() => onNavigate('history')}>View all →</button>
         </div>
         {txnsLoading ? <Spinner /> : recentTxns.length === 0 ? (
           <p style={{ fontSize: '14px', color: 'rgba(232,230,255,0.3)', padding: '16px 0' }}>No purchases yet.</p>
@@ -283,10 +290,10 @@ function HomeView({
 
       {/* Recent Activity */}
       {stats && stats.recentActivity.length > 0 && (
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'rgba(232,230,255,0.8)', fontFamily: "'Space Grotesk', sans-serif" }}>Recent AI Activity</h2>
-            <button onClick={() => onNavigate('activity')} style={{ background: 'none', border: 'none', color: '#c3c0ff', fontSize: '13px', cursor: 'pointer' }}>View all →</button>
+        <div className="fade-up delay-5">
+          <div className="section-header">
+            <h2 className="section-title">Recent AI Activity</h2>
+            <button className="section-link" onClick={() => onNavigate('activity')}>View all →</button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {stats.recentActivity.slice(0, 4).map(ev => (
@@ -360,15 +367,19 @@ function ShopView() {
   return (
     <div style={{ maxWidth: '720px', margin: '0 auto', paddingBottom: '120px' }}>
       {messages.length === 0 && (
-        <div style={{ textAlign: 'center', paddingTop: '32px', paddingBottom: '32px' }}>
-          <h2 style={{ fontSize: '32px', fontWeight: 800, color: '#e8e6ff', fontFamily: "'Space Grotesk', sans-serif", marginBottom: '10px' }}>Your AI Buyer</h2>
-          <p style={{ fontSize: '16px', color: 'rgba(232,230,255,0.5)', marginBottom: '28px' }}>Intent → Negotiation → Checkout. Fully autonomous.</p>
+        <div className="fade-up" style={{ textAlign: 'center', paddingTop: '40px', paddingBottom: '32px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', background: 'var(--brand-dim)', border: '1px solid var(--brand-border)', borderRadius: 'var(--r-full)', marginBottom: '20px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--brand)' }}>smart_toy</span>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--brand)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>AI Buyer Active</span>
+          </div>
+          <h2 className="font-display" style={{ fontSize: '34px', color: 'var(--text-1)', marginBottom: '12px' }}>What are you looking for?</h2>
+          <p style={{ fontSize: '16px', color: 'var(--text-2)', marginBottom: '32px', lineHeight: 1.6 }}>Intent → Discovery → Negotiation → Checkout. Fully autonomous.</p>
           <DemoPanel onSelectScenario={q => { setQuery(q); setTimeout(() => inputRef.current?.focus(), 100); }} disabled={isLoading} />
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', marginTop: '16px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', marginTop: '20px' }}>
             {SUGGESTIONS.map((s, i) => (
-              <div key={i} onClick={() => setQuery(s)} style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid rgba(195,192,255,0.2)', background: 'rgba(18,18,28,0.5)', cursor: 'pointer', fontSize: '13px', color: 'rgba(232,230,255,0.6)', whiteSpace: 'nowrap' }}>
+              <button key={i} onClick={() => setQuery(s)} className="ai-chip chip-animation" style={{ cursor: 'pointer', border: 'none', fontFamily: 'inherit' }}>
                 {s}
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -381,15 +392,18 @@ function ShopView() {
         <div ref={bottomRef} />
       </div>
       <form onSubmit={handleSubmit} style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 240px)', maxWidth: '720px', zIndex: 50, paddingLeft: '80px' }}>
-        <div style={{ background: 'rgba(18,18,28,0.8)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '40px', display: 'flex', alignItems: 'center', padding: '8px 8px 8px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+        <div className="chat-input-bar" style={{ display: 'flex', alignItems: 'center', padding: '8px 8px 8px 20px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '20px', color: 'var(--text-3)', marginRight: '10px', flexShrink: 0 }}>smart_toy</span>
           <input ref={inputRef} type="text" value={query} onChange={e => setQuery(e.target.value)} disabled={isLoading}
-            placeholder={isLoading ? 'Processing...' : 'Instruct your AI agent...'}
-            style={{ flex: 1, background: 'transparent', border: 'none', color: '#e8e6ff', fontSize: '15px', outline: 'none', paddingRight: '12px' }} />
+            placeholder={isLoading ? 'Processing...' : 'Instruct your AI agent…'}
+            style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--text-1)', fontSize: '15px', outline: 'none', paddingRight: '12px', fontFamily: 'inherit' }} />
           <button type="submit" disabled={!query.trim() || isLoading} style={{
-            width: '40px', height: '40px', borderRadius: '50%', border: 'none', cursor: query.trim() && !isLoading ? 'pointer' : 'not-allowed',
-            background: query.trim() && !isLoading ? 'rgba(195,192,255,0.25)' : 'rgba(255,255,255,0.05)',
-            color: query.trim() && !isLoading ? '#c3c0ff' : 'rgba(232,230,255,0.3)',
+            width: '40px', height: '40px', borderRadius: '50%', border: 'none',
+            cursor: query.trim() && !isLoading ? 'pointer' : 'not-allowed',
+            background: query.trim() && !isLoading ? 'var(--brand-dim)' : 'rgba(255,255,255,0.05)',
+            color: query.trim() && !isLoading ? 'var(--brand)' : 'var(--text-3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            transition: 'all 0.2s',
           }}>
             <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>arrow_upward</span>
           </button>
@@ -432,7 +446,7 @@ function HistoryView({ onNavigateToShop }: { onNavigateToShop: () => void }) {
 
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto' }}>
-      <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#e8e6ff', fontFamily: "'Space Grotesk', sans-serif", marginBottom: '20px' }}>Purchase History</h2>
+      <h2 className="font-heading" style={{ fontSize: '22px', color: 'var(--text-1)', marginBottom: '20px' }}>Purchase History</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {transactions.map(txn => (
           <div key={txn.id}>
@@ -657,10 +671,10 @@ function SpendingView({ profile: initProfile, stats, onProfileUpdate }: { profil
 
   return (
     <div style={{ maxWidth: '640px', margin: '0 auto' }}>
-      <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#e8e6ff', fontFamily: "'Space Grotesk', sans-serif", marginBottom: '24px' }}>Spending & Limits</h2>
+      <h2 className="font-heading" style={{ fontSize: '22px', color: 'var(--text-1)', marginBottom: '24px' }}>Spending &amp; Limits</h2>
 
       {/* Monthly progress */}
-      <div style={{ background: 'rgba(18,18,28,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '24px', marginBottom: '16px' }}>
+      <div className="card" style={{ marginBottom: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
           <div>
             <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>Monthly Spend</p>
@@ -681,7 +695,7 @@ function SpendingView({ profile: initProfile, stats, onProfileUpdate }: { profil
       </div>
 
       {/* Live Policy Preview */}
-      <div style={{ background: 'rgba(195,192,255,0.04)', border: '1px solid rgba(195,192,255,0.12)', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px' }}>
+      <div style={{ background: 'var(--brand-dim)', border: '1px solid var(--brand-border)', borderRadius: 'var(--r-lg)', padding: '16px 20px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
           <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#c3c0ff' }}>policy</span>
           <p style={{ fontSize: '13px', fontWeight: 700, color: '#c3c0ff', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Your AI Spending Controls</p>
@@ -713,7 +727,7 @@ function SpendingView({ profile: initProfile, stats, onProfileUpdate }: { profil
       </div>
 
       {/* Limit Fields */}
-      <div style={{ background: 'rgba(18,18,28,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '20px', marginBottom: '12px' }}>
+      <div className="card" style={{ marginBottom: '12px', padding: 'var(--sp-5)' }}>
         {[
           { label: 'Agent Spending Limit', desc: 'Max the AI can spend in a single purchase', value: agentLimit, setter: setAgentLimit, icon: 'smart_toy', color: '#c3c0ff' },
           { label: 'Approval Threshold', desc: 'Purchases above this require your approval', value: approvalThresh, setter: setApprovalThresh, icon: 'verified', color: '#fbbf24' },
@@ -740,7 +754,7 @@ function SpendingView({ profile: initProfile, stats, onProfileUpdate }: { profil
       </div>
 
       {/* Policy Toggles */}
-      <div style={{ background: 'rgba(18,18,28,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '4px 20px', marginBottom: '20px' }}>
+      <div className="card" style={{ padding: '4px 20px', marginBottom: '20px' }}>
         <Toggle
           id="toggle-trusted-merchants"
           checked={trustedOnly}
@@ -762,15 +776,14 @@ function SpendingView({ profile: initProfile, stats, onProfileUpdate }: { profil
       <div style={{ display: 'flex', gap: '10px' }}>
         {editing ? (
           <>
-            <button id="save-limits-btn" onClick={handleSave} disabled={saving} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'rgba(195,192,255,0.2)', color: '#c3c0ff', fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>
-              {saving ? 'Saving...' : 'Save Limits'}
+            <button id="save-limits-btn" onClick={handleSave} disabled={saving} className="btn btn-solid" style={{ flex: 1 }}>
+              {saving ? <><span className="spinner" style={{ width: '14px', height: '14px', color: '#0f0f14' }} /> Saving…</> : 'Save Limits'}
             </button>
-            <button onClick={() => { setEditing(false); }} style={{ padding: '12px 20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'none', color: 'rgba(232,230,255,0.5)', cursor: 'pointer' }}>
-              Cancel
-            </button>
+            <button onClick={() => { setEditing(false); }} className="btn btn-ghost">Cancel</button>
           </>
         ) : (
-          <button id="edit-limits-btn" onClick={() => setEditing(true)} style={{ padding: '12px 24px', borderRadius: '12px', border: '1px solid rgba(195,192,255,0.2)', background: 'none', color: '#c3c0ff', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>
+          <button id="edit-limits-btn" onClick={() => setEditing(true)} className="btn btn-primary">
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
             Edit Limits
           </button>
         )}
@@ -853,7 +866,7 @@ function ActivityView({ onNavigateToShop }: { onNavigateToShop: () => void }) {
 
   return (
     <div style={{ maxWidth: '680px', margin: '0 auto' }}>
-      <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#e8e6ff', fontFamily: "'Space Grotesk', sans-serif", marginBottom: '24px' }}>AI Activity</h2>
+      <h2 className="font-heading" style={{ fontSize: '22px', color: 'var(--text-1)', marginBottom: '24px' }}>AI Activity</h2>
       {Object.entries(grouped).map(([day, items]) => (
         <div key={day} style={{ marginBottom: '28px' }}>
           <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>{day}</p>
@@ -904,49 +917,47 @@ function ProfileView({ user, logout }: { user: { name: string; email: string; cr
 
   return (
     <div style={{ maxWidth: '480px', margin: '0 auto' }}>
-      <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#e8e6ff', fontFamily: "'Space Grotesk', sans-serif", marginBottom: '24px' }}>Profile</h2>
-      <div style={{ background: 'rgba(18,18,28,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '28px', marginBottom: '16px' }}>
-        {/* Avatar */}
-        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(195,192,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', fontSize: '24px', fontWeight: 700, color: '#c3c0ff', fontFamily: "'Space Grotesk', sans-serif" }}>
-          {user.name.charAt(0).toUpperCase()}
+      <h2 className="font-heading" style={{ fontSize: '22px', color: 'var(--text-1)', marginBottom: '24px' }}>Profile</h2>
+      <div className="card" style={{ marginBottom: '16px' }}>
+        {/* Avatar + Name row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--brand-dim)', border: '1px solid var(--brand-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: 700, color: 'var(--brand)', flexShrink: 0 }}>
+            {user.name.charAt(0).toUpperCase()}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p className="font-heading" style={{ fontSize: '17px', color: 'var(--text-1)', marginBottom: '2px' }}>{name}</p>
+            <p style={{ fontSize: '13px', color: 'var(--text-2)' }}>{user.email}</p>
+          </div>
+          <span className="badge badge-info">CUSTOMER</span>
         </div>
-        {/* Name */}
+        {/* Name edit */}
         <div style={{ marginBottom: '16px' }}>
-          <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>Name</p>
+          <p className="form-label">Display Name</p>
           {editingName ? (
             <div style={{ display: 'flex', gap: '8px' }}>
-              <input value={name} onChange={e => setName(e.target.value)} style={{ flex: 1, padding: '8px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(195,192,255,0.25)', borderRadius: '10px', color: '#e8e6ff', fontSize: '15px', outline: 'none' }} />
-              <button onClick={saveName} disabled={saving} style={{ padding: '8px 16px', borderRadius: '10px', border: 'none', background: 'rgba(195,192,255,0.2)', color: '#c3c0ff', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>{saving ? '…' : 'Save'}</button>
-              <button onClick={() => { setEditingName(false); setName(user.name); }} style={{ padding: '8px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'none', color: 'rgba(232,230,255,0.4)', cursor: 'pointer' }}>✕</button>
+              <input value={name} onChange={e => setName(e.target.value)} className="form-input" style={{ flex: 1 }} />
+              <button onClick={saveName} disabled={saving} className="btn btn-primary btn-sm">{saving ? '…' : 'Save'}</button>
+              <button onClick={() => { setEditingName(false); setName(user.name); }} className="btn btn-ghost btn-sm">✕</button>
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <p style={{ fontSize: '16px', fontWeight: 600, color: '#e8e6ff' }}>{name}</p>
-              <button onClick={() => setEditingName(true)} style={{ background: 'none', border: 'none', color: 'rgba(195,192,255,0.5)', cursor: 'pointer', fontSize: '12px' }}>Edit</button>
+              <p style={{ fontSize: '15px', color: 'var(--text-1)' }}>{name}</p>
+              <button onClick={() => setEditingName(true)} className="btn btn-ghost btn-sm">Edit</button>
             </div>
           )}
         </div>
-        {/* Email */}
-        <div style={{ marginBottom: '16px' }}>
-          <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>Email</p>
-          <p style={{ fontSize: '15px', color: 'rgba(232,230,255,0.7)' }}>{user.email}</p>
-        </div>
-        {/* Role */}
-        <div style={{ marginBottom: '16px' }}>
-          <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>Role</p>
-          <span style={{ fontSize: '12px', fontWeight: 700, background: 'rgba(195,192,255,0.1)', border: '1px solid rgba(195,192,255,0.2)', borderRadius: '20px', padding: '3px 12px', color: '#c3c0ff' }}>CUSTOMER</span>
-        </div>
         {/* Member since */}
         <div>
-          <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>Member Since</p>
-          <p style={{ fontSize: '15px', color: 'rgba(232,230,255,0.7)' }}>{formatDate(user.createdAt)}</p>
+          <p className="form-label">Member Since</p>
+          <p style={{ fontSize: '14px', color: 'var(--text-2)' }}>{formatDate(user.createdAt)}</p>
         </div>
       </div>
 
       <button
         id="profile-logout-btn"
         onClick={logout}
-        style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid rgba(248,113,113,0.2)', background: 'rgba(248,113,113,0.06)', color: '#f87171', fontSize: '15px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+        className="btn btn-danger btn-lg"
+        style={{ width: '100%', justifyContent: 'center' }}
       >
         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>logout</span>
         Sign Out
@@ -1014,8 +1025,8 @@ export default function CustomerDashboard() {
 
   if (authLoading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f0f14' }}>
-        <div className="btn-spinner" style={{ width: '32px', height: '32px', borderColor: '#c3c0ff', borderTopColor: 'transparent' }} />
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surf-0)' }}>
+        <div className="spinner" style={{ width: '32px', height: '32px', color: 'var(--brand)' }} />
       </div>
     );
   }
@@ -1024,23 +1035,28 @@ export default function CustomerDashboard() {
   const navigate = (v: ViewId) => { setActiveView(v); setNavOpen(false); };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f0f14', display: 'flex', fontFamily: "'Geist', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: 'var(--surf-0)', display: 'flex' }}>
       {/* Sidebar */}
       <nav style={{
         position: 'fixed', left: 0, top: 0, height: '100vh', zIndex: 40,
         width: navOpen ? '220px' : '64px',
-        background: 'rgba(12,12,20,0.95)', backdropFilter: 'blur(20px)',
-        borderRight: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex', flexDirection: 'column', padding: '20px 0',
-        transition: 'width 0.25s ease', overflow: 'hidden',
+        background: 'rgba(10,10,18,0.97)', backdropFilter: 'blur(20px)',
+        borderRight: '1px solid var(--border)',
+        display: 'flex', flexDirection: 'column', padding: '16px 0',
+        transition: 'width 0.25s cubic-bezier(0.4,0,0.2,1)', overflow: 'hidden',
       }}
         onMouseEnter={() => setNavOpen(true)}
         onMouseLeave={() => setNavOpen(false)}
       >
         {/* Logo */}
-        <div style={{ padding: '0 16px', marginBottom: '28px', display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-          <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#c3c0ff', flexShrink: 0 }}>smart_toy</span>
-          <span style={{ fontSize: '14px', fontWeight: 700, color: '#c3c0ff', opacity: navOpen ? 1 : 0, transition: 'opacity 0.15s' }}>Customer</span>
+        <div style={{ padding: '0 12px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--brand-dim)', border: '1px solid var(--brand-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '20px', color: 'var(--brand)' }}>smart_toy</span>
+          </div>
+          <div style={{ opacity: navOpen ? 1 : 0, transition: 'opacity 0.15s' }}>
+            <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--brand)', lineHeight: 1.2 }}>Customer</p>
+            <p style={{ fontSize: '10px', color: 'var(--text-3)' }}>AI Commerce OS</p>
+          </div>
         </div>
 
         {/* Nav items */}
@@ -1050,27 +1066,22 @@ export default function CustomerDashboard() {
               key={item.id}
               id={`nav-${item.id}`}
               onClick={() => navigate(item.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '14px', padding: '10px 8px', borderRadius: '10px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', width: '100%',
-                background: activeView === item.id ? 'rgba(195,192,255,0.12)' : 'transparent',
-                color: activeView === item.id ? '#c3c0ff' : 'rgba(232,230,255,0.45)',
-                transition: 'all 0.15s',
-              }}
+              className={`sidebar-nav-item ${activeView === item.id ? 'active' : ''}`}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '20px', flexShrink: 0, fontVariationSettings: activeView === item.id ? "'FILL' 1" : "'FILL' 0" }}>{item.icon}</span>
-              <span style={{ fontSize: '14px', fontWeight: activeView === item.id ? 600 : 400, opacity: navOpen ? 1 : 0, transition: 'opacity 0.15s' }}>{item.label}</span>
+              <span className="material-symbols-outlined nav-icon" style={{ fontVariationSettings: activeView === item.id ? "'FILL' 1" : "'FILL' 0" }}>{item.icon}</span>
+              <span style={{ opacity: navOpen ? 1 : 0, transition: 'opacity 0.15s' }}>{item.label}</span>
             </button>
           ))}
         </div>
 
         {/* User avatar at bottom */}
-        <div style={{ padding: '0 8px', display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(195,192,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 700, color: '#c3c0ff', flexShrink: 0 }}>
+        <div style={{ padding: '12px 8px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--brand-dim)', border: '1px solid var(--brand-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: 700, color: 'var(--brand)', flexShrink: 0 }}>
             {user.name.charAt(0).toUpperCase()}
           </div>
-          <div style={{ opacity: navOpen ? 1 : 0, transition: 'opacity 0.15s' }}>
-            <p style={{ fontSize: '13px', fontWeight: 600, color: '#e8e6ff', lineHeight: 1.2 }}>{user.name}</p>
-            <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.4)' }}>{user.email}</p>
+          <div style={{ opacity: navOpen ? 1 : 0, transition: 'opacity 0.15s', minWidth: 0 }}>
+            <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-1)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</p>
+            <p style={{ fontSize: '11px', color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
           </div>
         </div>
       </nav>
@@ -1078,21 +1089,31 @@ export default function CustomerDashboard() {
       {/* Main Content */}
       <main style={{ flex: 1, marginLeft: '64px', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         {/* Top bar */}
-        <header style={{ padding: '16px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(12,12,20,0.6)', backdropFilter: 'blur(12px)', position: 'sticky', top: 0, zIndex: 30 }}>
-          <div>
-            <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#e8e6ff', fontFamily: "'Space Grotesk', sans-serif" }}>
+        <header style={{ padding: '0 28px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(10,10,18,0.85)', backdropFilter: 'blur(16px)', position: 'sticky', top: 0, zIndex: 30, height: '56px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <h2 className="font-heading" style={{ fontSize: '16px', color: 'var(--text-1)' }}>
               {NAV_ITEMS.find(n => n.id === activeView)?.label ?? 'Dashboard'}
             </h2>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ fontSize: '11px', color: 'rgba(232,230,255,0.3)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px', padding: '4px 12px' }}>
-              Phase 10B · Agentic Commerce OS
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {activeView !== 'shop' && (
+              <button
+                onClick={() => navigate('shop')}
+                className="btn btn-primary btn-sm"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>smart_toy</span>
+                New Shop
+              </button>
+            )}
+            <div style={{ fontSize: '11px', color: 'var(--text-3)', background: 'var(--surf-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-full)', padding: '4px 12px' }}>
+              Phase 10H
             </div>
             <button
               id="topbar-logout-btn"
               onClick={logout}
               title="Logout"
-              style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.08)', background: 'none', color: 'rgba(232,230,255,0.4)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              className="btn btn-ghost btn-icon"
+              style={{ width: '36px', height: '36px', borderRadius: '50%' }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>logout</span>
             </button>
@@ -1100,7 +1121,7 @@ export default function CustomerDashboard() {
         </header>
 
         {/* View content */}
-        <div style={{ flex: 1, padding: activeView === 'shop' ? '24px 0 0' : '32px 28px', overflowY: 'auto' }} className="custom-scrollbar">
+        <div style={{ flex: 1, padding: activeView === 'shop' ? '28px 0 0' : '32px 28px', overflowY: 'auto' }} className="custom-scrollbar">
           {activeView === 'home' && (
             <HomeView
               user={user}

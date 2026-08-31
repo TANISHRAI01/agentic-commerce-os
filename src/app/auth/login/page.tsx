@@ -4,27 +4,10 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { UserRole } from '@/types/auth';
 
-const CARD_STYLE = {
-  background: 'rgba(18,18,28,0.8)',
-  backdropFilter: 'blur(20px)',
-  border: '1px solid rgba(195,192,255,0.15)',
-  borderRadius: '24px',
-  padding: '40px',
-  width: '100%',
-  maxWidth: '440px',
-};
-
-const INPUT_STYLE = {
-  width: '100%',
-  padding: '12px 16px',
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(195,192,255,0.15)',
-  borderRadius: '12px',
-  color: '#e8e6ff',
-  fontSize: '15px',
-  outline: 'none',
-  boxSizing: 'border-box' as const,
-  transition: 'border-color 0.2s',
+// Demo credentials for the hackathon demo
+const DEMO_CREDENTIALS: Record<UserRole, { email: string; password: string; label: string }> = {
+  CUSTOMER: { email: 'customer@demo.com', password: 'demo1234', label: 'Customer Demo' },
+  MERCHANT: { email: 'merchant@demo.com', password: 'demo1234', label: 'Merchant Demo' },
 };
 
 function LoginPageInner() {
@@ -38,6 +21,7 @@ function LoginPageInner() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPass, setShowPass] = useState(false);
 
   useEffect(() => {
     if (roleParam === 'CUSTOMER' || roleParam === 'MERCHANT') {
@@ -45,7 +29,17 @@ function LoginPageInner() {
     }
   }, [roleParam]);
 
-  const accentColor = role === 'CUSTOMER' ? '#c3c0ff' : '#fbbf24';
+  const isCustomer = role === 'CUSTOMER';
+  const accentColor = isCustomer ? 'var(--brand)' : 'var(--brand-merchant)';
+  const accentDim = isCustomer ? 'var(--brand-dim)' : 'var(--brand-merchant-dim)';
+  const accentBorder = isCustomer ? 'var(--brand-border)' : 'var(--brand-merchant-border)';
+  const demo = DEMO_CREDENTIALS[role];
+
+  const fillDemo = () => {
+    setEmail(demo.email);
+    setPassword(demo.password);
+    setError('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,21 +60,19 @@ function LoginPageInner() {
         return;
       }
 
-      // Verify logged-in role matches requested role
       if (data.user.role !== role) {
-        setError(`This account is a ${data.user.role.toLowerCase()} account. Please use the correct login.`);
+        setError(`This account is registered as a ${data.user.role.toLowerCase()}. Please use the correct login.`);
         await fetch('/api/auth/logout', { method: 'POST' });
         return;
       }
 
-      // Redirect to the appropriate dashboard or the originally requested page
       if (redirectTo) {
         router.push(redirectTo);
       } else {
         router.push(role === 'CUSTOMER' ? '/customer' : '/merchant');
       }
     } catch {
-      setError('Network error. Please try again.');
+      setError('Network error. Please check your connection.');
     } finally {
       setIsLoading(false);
     }
@@ -93,111 +85,187 @@ function LoginPageInner() {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'var(--color-background, #0f0f14)',
+      background: 'var(--surf-0)',
       padding: '24px',
-      fontFamily: "'Geist', sans-serif",
+      position: 'relative',
+      overflow: 'hidden',
     }}>
-      <div style={CARD_STYLE}>
-        {/* Back */}
-        <button
-          id="back-to-role-select"
-          onClick={() => router.push('/auth')}
-          style={{ background: 'none', border: 'none', color: 'rgba(232,230,255,0.4)', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '32px', padding: 0 }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_back</span>
-          Back
-        </button>
+      {/* Background orb */}
+      <div className="auth-orb" style={{
+        width: '400px', height: '400px',
+        background: isCustomer ? '#c3c0ff' : '#fbbf24',
+        top: '-150px', right: '-100px',
+        opacity: 0.12,
+      }} />
 
-        {/* Role toggle */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '4px' }}>
-          {(['CUSTOMER', 'MERCHANT'] as UserRole[]).map(r => (
-            <button
-              key={r}
-              id={`role-toggle-${r.toLowerCase()}`}
-              onClick={() => setRole(r)}
-              style={{
-                flex: 1, padding: '8px', borderRadius: '9px', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: 600,
-                background: role === r ? (r === 'CUSTOMER' ? 'rgba(195,192,255,0.15)' : 'rgba(251,191,36,0.15)') : 'transparent',
-                color: role === r ? (r === 'CUSTOMER' ? '#c3c0ff' : '#fbbf24') : 'rgba(232,230,255,0.4)',
-                transition: 'all 0.2s',
-              }}
-            >
-              {r === 'CUSTOMER' ? '🛍️ Customer' : '🏪 Merchant'}
-            </button>
-          ))}
+      {/* Back link */}
+      <button
+        onClick={() => router.push('/auth')}
+        className="btn btn-ghost btn-sm"
+        style={{ position: 'absolute', top: '24px', left: '24px', gap: '6px' }}
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_back</span>
+        Back
+      </button>
+
+      <div className="fade-up" style={{ width: '100%', maxWidth: '440px', position: 'relative', zIndex: 1 }}>
+        {/* Logo */}
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: '48px', height: '48px', borderRadius: '14px',
+            background: accentDim, border: `1px solid ${accentBorder}`,
+            marginBottom: '16px',
+          }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '24px', color: accentColor }}>
+              {isCustomer ? 'shopping_bag' : 'storefront'}
+            </span>
+          </div>
+          <h1 className="font-heading" style={{ fontSize: '26px', color: 'var(--text-1)', marginBottom: '6px' }}>
+            {isCustomer ? 'Customer Login' : 'Merchant Login'}
+          </h1>
+          <p style={{ fontSize: '14px', color: 'var(--text-2)' }}>
+            Sign in to your {isCustomer ? 'shopping' : 'merchant'} dashboard
+          </p>
         </div>
 
-        <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#e8e6ff', marginBottom: '8px', fontFamily: "'Space Grotesk', sans-serif" }}>
-          Sign in
-        </h1>
-        <p style={{ fontSize: '14px', color: 'rgba(232,230,255,0.4)', marginBottom: '32px' }}>
-          Welcome back to Agentic Commerce OS
-        </p>
-
-        {error && (
+        {/* Card */}
+        <div className="card" style={{ padding: '32px' }}>
+          {/* Role toggle */}
           <div style={{
-            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
-            borderRadius: '12px', padding: '12px 16px', marginBottom: '24px',
-            color: '#fca5a5', fontSize: '14px',
+            display: 'flex', gap: '8px', padding: '4px',
+            background: 'var(--surf-2)', borderRadius: 'var(--r-md)',
+            marginBottom: '24px',
           }}>
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', color: 'rgba(232,230,255,0.6)', marginBottom: '8px' }}>Email</label>
-            <input
-              id="login-email"
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              placeholder="you@example.com"
-              style={INPUT_STYLE}
-              onFocus={e => (e.target.style.borderColor = accentColor)}
-              onBlur={e => (e.target.style.borderColor = 'rgba(195,192,255,0.15)')}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', color: 'rgba(232,230,255,0.6)', marginBottom: '8px' }}>Password</label>
-            <input
-              id="login-password"
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              placeholder="••••••••"
-              style={INPUT_STYLE}
-              onFocus={e => (e.target.style.borderColor = accentColor)}
-              onBlur={e => (e.target.style.borderColor = 'rgba(195,192,255,0.15)')}
-            />
+            {(['CUSTOMER', 'MERCHANT'] as UserRole[]).map(r => (
+              <button
+                key={r}
+                onClick={() => { setRole(r); setError(''); }}
+                style={{
+                  flex: 1, padding: '8px', borderRadius: '8px',
+                  cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+                  transition: 'all 0.2s',
+                  background: role === r
+                    ? (r === 'CUSTOMER' ? 'var(--brand-dim)' : 'var(--brand-merchant-dim)')
+                    : 'transparent',
+                  color: role === r
+                    ? (r === 'CUSTOMER' ? 'var(--brand)' : 'var(--brand-merchant)')
+                    : 'var(--text-3)',
+                  border: role === r
+                    ? `1px solid ${r === 'CUSTOMER' ? 'var(--brand-border)' : 'var(--brand-merchant-border)'}`
+                    : '1px solid transparent',
+                }}
+              >
+                {r === 'CUSTOMER' ? '🛍️ Customer' : '🏪 Merchant'}
+              </button>
+            ))}
           </div>
 
+          {/* Demo fill button */}
           <button
-            id="login-submit-btn"
-            type="submit"
-            disabled={isLoading}
+            onClick={fillDemo}
+            type="button"
             style={{
-              marginTop: '8px', padding: '14px', borderRadius: '12px', border: 'none',
-              background: role === 'CUSTOMER' ? 'rgba(195,192,255,0.2)' : 'rgba(251,191,36,0.2)',
-              color: accentColor, fontSize: '15px', fontWeight: 700,
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              opacity: isLoading ? 0.6 : 1,
+              width: '100%', padding: '10px', borderRadius: 'var(--r-md)',
+              background: 'rgba(255,255,255,0.03)', border: '1px dashed var(--border-strong)',
+              cursor: 'pointer', marginBottom: '20px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              color: 'var(--text-2)', fontSize: '13px', fontWeight: 500,
               transition: 'all 0.2s',
             }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = accentBorder)}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
           >
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            <span className="material-symbols-outlined" style={{ fontSize: '16px', color: accentColor }}>bolt</span>
+            Use demo credentials ({demo.email})
           </button>
-        </form>
 
-        <p style={{ marginTop: '24px', textAlign: 'center', fontSize: '14px', color: 'rgba(232,230,255,0.4)' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label className="form-label" htmlFor="login-email">Email</label>
+              <input
+                id="login-email"
+                type="email"
+                className={`form-input${!isCustomer ? ' merchant' : ''}`}
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                autoComplete="email"
+              />
+            </div>
+
+            <div>
+              <label className="form-label" htmlFor="login-password">Password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="login-password"
+                  type={showPass ? 'text' : 'password'}
+                  className={`form-input${!isCustomer ? ' merchant' : ''}`}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="current-password"
+                  style={{ paddingRight: '44px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(v => !v)}
+                  style={{
+                    position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: 'var(--text-3)', display: 'flex',
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                    {showPass ? 'visibility_off' : 'visibility'}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div className="form-error fade-in">
+                <span className="material-symbols-outlined" style={{ fontSize: '16px', flexShrink: 0 }}>error</span>
+                {error}
+              </div>
+            )}
+
+            <button
+              id="login-submit-btn"
+              type="submit"
+              disabled={isLoading || !email || !password}
+              className="btn btn-lg"
+              style={{
+                background: accentDim,
+                border: `1px solid ${accentBorder}`,
+                color: accentColor,
+                marginTop: '4px',
+                fontSize: '15px',
+                fontWeight: 700,
+              }}
+            >
+              {isLoading ? (
+                <>
+                  <span className="spinner" style={{ width: '16px', height: '16px' }} />
+                  Signing in…
+                </>
+              ) : (
+                <>
+                  Sign in
+                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_forward</span>
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+
+        <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '13px', color: 'var(--text-3)' }}>
           Don&apos;t have an account?{' '}
           <button
-            id="go-to-signup"
             onClick={() => router.push(`/auth/signup?role=${role}`)}
-            style={{ background: 'none', border: 'none', color: accentColor, cursor: 'pointer', fontSize: '14px', fontWeight: 600 }}
+            style={{ background: 'none', border: 'none', color: accentColor, fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
           >
             Sign up
           </button>
@@ -209,7 +277,7 @@ function LoginPageInner() {
 
 export default function LoginPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--surf-0)' }} />}>
       <LoginPageInner />
     </Suspense>
   );
