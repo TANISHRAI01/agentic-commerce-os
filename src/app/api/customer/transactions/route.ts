@@ -3,13 +3,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db/connection';
 import { getTransactionsByUserId, countTransactionsByUserId } from '@/services/transaction';
+import { getAuthUser, unauthorized } from '@/lib/api-auth';
 
 export async function GET(req: NextRequest) {
   try {
-    const userId = req.headers.get('x-user-id');
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
-    }
+    const auth = getAuthUser(req);
+    if (!auth) return unauthorized();
+    const userId = auth.userId;
 
     const { searchParams } = new URL(req.url);
     const limit = Math.min(parseInt(searchParams.get('limit') ?? '20'), 50);

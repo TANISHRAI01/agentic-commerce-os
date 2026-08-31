@@ -5,16 +5,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db/connection';
 import { getTransactionForUser } from '@/services/transaction';
 import { getAuditTrail } from '@/audit/logger';
+import { getAuthUser, unauthorized } from '@/lib/api-auth';
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } },
 ) {
   try {
-    const userId = req.headers.get('x-user-id');
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
-    }
+    const auth = getAuthUser(req);
+    if (!auth) return unauthorized();
+    const userId = auth.userId;
 
     const db = await getDb();
     const transaction = getTransactionForUser(db, params.id, userId);

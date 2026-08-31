@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getDb, saveDb } from '@/db/connection';
 import { getCustomerPolicyConfig, computeMonthlySpent } from '@/services/customer-policy';
+import { getAuthUser, unauthorized } from '@/lib/api-auth';
 
 const UpdateProfileSchema = z.object({
   name: z.string().min(1).optional(),
@@ -18,10 +19,9 @@ const UpdateProfileSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const userId = req.headers.get('x-user-id');
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
-    }
+    const auth = getAuthUser(req);
+    if (!auth) return unauthorized();
+    const userId = auth.userId;
 
     const db = await getDb();
 
@@ -82,10 +82,9 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const userId = req.headers.get('x-user-id');
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
-    }
+    const auth = getAuthUser(req);
+    if (!auth) return unauthorized();
+    const userId = auth.userId;
 
     const body = await req.json();
     const parsed = UpdateProfileSchema.safeParse(body);
