@@ -30,7 +30,10 @@ export class LLMConnectionError extends Error {
 // ── Configuration ────────────────────────────────────────────
 
 const MAX_RETRIES = 2;
-const MODEL_NAME = 'gemini-3.6-flash';
+// Primary model — fast and cheap for structured extraction
+// Fallback used when primary returns 503 (overloaded)
+const MODEL_NAME          = 'gemini-2.0-flash';
+const MODEL_NAME_FALLBACK = 'gemini-1.5-flash';
 
 // ── Singleton Client ─────────────────────────────────────────
 
@@ -88,81 +91,99 @@ export async function generateStructuredOutput<T>(
   schema: ZodSchema<T>,
 ): Promise<T> {
   const genAI = getClient();
-  const model = genAI.getGenerativeModel({
-    model: MODEL_NAME,
-    generationConfig: {
-      temperature: 0.1, // Low temperature for deterministic structured output
-      topP: 0.95,
-      maxOutputTokens: 2048,
-    },
-  });
 
-  let lastError: Error | null = null;
-  let lastRawOutput = '';
+  // Try primary model, fall back to gemini-1.5-flash on 503
+  const modelsToTry = [MODEL_NAME, MODEL_NAME_FALLBACK];
 
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const prompt = attempt === 0
-        ? `${systemPrompt}\n\nUser request:\n${userPrompt}`
-        : `${systemPrompt}\n\nIMPORTANT: Your previous response was not valid JSON. You MUST respond with ONLY a valid JSON object, no other text.\n\nUser request:\n${userPrompt}`;
+  for (const modelName of modelsToTry) {
+    const model = genAI.getGenerativeModel({
+      model: modelName,
+      generationConfig: {
+        temperature: 0.1,
+        topP: 0.95,
+        maxOutputTokens: 2048,
+      },
+    });
 
-      const result = await model.generateContent(prompt);
-      const response = result.response;
-      const text = response.text();
+    let lastError: Error | null = null;
+    let lastRawOutput = '';
+    let is503 = false;
 
-      if (!text || text.trim().length === 0) {
-        lastError = new LLMValidationError(
-          'LLM returned empty response',
-          '',
-        );
-        continue;
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      // Exponential backoff on retry (0ms, 1s, 2s)
+      if (attempt > 0) {
+        await new Promise(r => setTimeout(r, attempt * 1000));
       }
-
-      lastRawOutput = text;
-
-      // Extract and parse JSON
-      const jsonStr = extractJSON(text);
-      let parsed: unknown;
 
       try {
-        parsed = JSON.parse(jsonStr);
-      } catch (parseError) {
-        lastError = new LLMValidationError(
-          `Failed to parse LLM output as JSON (attempt ${attempt + 1}/${MAX_RETRIES + 1})`,
-          text,
-        );
-        continue;
-      }
+        const prompt = attempt === 0
+          ? `${systemPrompt}\n\nUser request:\n${userPrompt}`
+          : `${systemPrompt}\n\nIMPORTANT: Your previous response was not valid JSON. You MUST respond with ONLY a valid JSON object, no other text.\n\nUser request:\n${userPrompt}`;
 
-      // Validate against schema
-      const validated = schema.safeParse(parsed);
-      if (!validated.success) {
-        lastError = new LLMValidationError(
-          `LLM output failed schema validation (attempt ${attempt + 1}/${MAX_RETRIES + 1}): ${validated.error.message}`,
-          text,
-          validated.error,
-        );
-        continue;
-      }
+        const result = await model.generateContent(prompt);
+        const response = result.response;
+        const text = response.text();
 
-      return validated.data;
-    } catch (error) {
-      if (error instanceof LLMValidationError) {
-        lastError = error;
-        continue;
-      }
+        if (!text || text.trim().length === 0) {
+          lastError = new LLMValidationError('LLM returned empty response', '');
+          continue;
+        }
 
-      // Network/API errors — don't retry
-      throw new LLMConnectionError(
-        `Gemini API error: ${error instanceof Error ? error.message : String(error)}`
-      );
+        lastRawOutput = text;
+
+        const jsonStr = extractJSON(text);
+        let parsed: unknown;
+
+        try {
+          parsed = JSON.parse(jsonStr);
+        } catch {
+          lastError = new LLMValidationError(
+            `Failed to parse LLM output as JSON (attempt ${attempt + 1}/${MAX_RETRIES + 1})`,
+            text,
+          );
+          continue;
+        }
+
+        const validated = schema.safeParse(parsed);
+        if (!validated.success) {
+          lastError = new LLMValidationError(
+            `LLM output failed schema validation (attempt ${attempt + 1}/${MAX_RETRIES + 1}): ${validated.error.message}`,
+            text,
+            validated.error,
+          );
+          continue;
+        }
+
+        return validated.data;
+      } catch (error) {
+        if (error instanceof LLMValidationError) {
+          lastError = error;
+          continue;
+        }
+
+        const errMsg = error instanceof Error ? error.message : String(error);
+        // 503 / overloaded — try fallback model
+        if (errMsg.includes('503') || errMsg.toLowerCase().includes('overload') || errMsg.toLowerCase().includes('unavailable')) {
+          is503 = true;
+          lastError = new LLMConnectionError(`Gemini API error: ${errMsg}`);
+          break; // exit retry loop, try next model
+        }
+
+        // Other network/API errors — don't retry
+        throw new LLMConnectionError(`Gemini API error: ${errMsg}`);
+      }
     }
+
+    // If this model was overloaded, try the next one
+    if (is503) continue;
+
+    // All retries exhausted (validation errors, not 503)
+    throw lastError ?? new LLMValidationError('All LLM retries exhausted', lastRawOutput);
   }
 
-  // All retries exhausted
-  throw lastError ?? new LLMValidationError(
-    'All LLM retries exhausted',
-    lastRawOutput,
+  // Both models failed
+  throw new LLMConnectionError(
+    'Gemini API unavailable on all models (503). This is a temporary Google outage — please try again in a moment.',
   );
 }
 
