@@ -30,9 +30,9 @@ export class LLMConnectionError extends Error {
 // ── Configuration ────────────────────────────────────────────
 
 const MAX_RETRIES = 2;
-// Primary model — fast and cheap for structured extraction
+// Primary model — gemini-3.6-flash (gemini-2.0-flash is deprecated as of Aug 2026)
 // Fallback used when primary returns 503 (overloaded)
-const MODEL_NAME          = 'gemini-2.0-flash';
+const MODEL_NAME          = 'gemini-3.6-flash';
 const MODEL_NAME_FALLBACK = 'gemini-1.5-flash';
 
 // ── Singleton Client ─────────────────────────────────────────
@@ -162,8 +162,14 @@ export async function generateStructuredOutput<T>(
         }
 
         const errMsg = error instanceof Error ? error.message : String(error);
-        // 503 / overloaded — try fallback model
-        if (errMsg.includes('503') || errMsg.toLowerCase().includes('overload') || errMsg.toLowerCase().includes('unavailable')) {
+        // 503 overloaded OR 404 model-not-found — try fallback model
+        if (
+          errMsg.includes('503') || errMsg.includes('404') ||
+          errMsg.toLowerCase().includes('overload') ||
+          errMsg.toLowerCase().includes('unavailable') ||
+          errMsg.toLowerCase().includes('no longer available') ||
+          errMsg.toLowerCase().includes('not found')
+        ) {
           is503 = true;
           lastError = new LLMConnectionError(`Gemini API error: ${errMsg}`);
           break; // exit retry loop, try next model
