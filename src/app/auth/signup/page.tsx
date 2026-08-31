@@ -3,11 +3,13 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { UserRole } from '@/types/auth';
+import { useAuth } from '@/app/components/AuthProvider';
 
 function SignupPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const roleParam = searchParams.get('role') as UserRole | null;
+  const { refetch } = useAuth();
 
   const [role, setRole] = useState<UserRole>(roleParam === 'MERCHANT' ? 'MERCHANT' : 'CUSTOMER');
   const [isLoading, setIsLoading] = useState(false);
@@ -83,7 +85,10 @@ function SignupPageInner() {
         return;
       }
 
+      // Refresh AuthProvider context so the dashboard doesn't see a stale null user
+      await refetch();
       router.push(role === 'CUSTOMER' ? '/customer' : '/merchant');
+
     } catch {
       setError('Network error. Please try again.');
     } finally {

@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { UserRole } from '@/types/auth';
+import { useAuth } from '@/app/components/AuthProvider';
 
 // Demo credentials for the hackathon demo
 const DEMO_CREDENTIALS: Record<UserRole, { email: string; password: string; label: string }> = {
@@ -15,6 +16,7 @@ function LoginPageInner() {
   const searchParams = useSearchParams();
   const roleParam = searchParams.get('role') as UserRole | null;
   const redirectTo = searchParams.get('redirect') ?? null;
+  const { refetch } = useAuth();
 
   const [role, setRole] = useState<UserRole>(roleParam === 'MERCHANT' ? 'MERCHANT' : 'CUSTOMER');
   const [email, setEmail] = useState('');
@@ -65,6 +67,9 @@ function LoginPageInner() {
         await fetch('/api/auth/logout', { method: 'POST' });
         return;
       }
+
+      // Refresh AuthProvider context before navigating to dashboard
+      await refetch();
 
       if (redirectTo) {
         router.push(redirectTo);
