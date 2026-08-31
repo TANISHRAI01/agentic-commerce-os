@@ -319,7 +319,7 @@ function HomeView({
 // View: AI Shop (reuses existing components)
 // ─────────────────────────────────────────────────────────────
 
-function ShopView() {
+function ShopView({ onPurchaseComplete }: { onPurchaseComplete?: () => void }) {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -349,6 +349,8 @@ function ShopView() {
           } catch { /* non-fatal */ }
         }
         setMessages(prev => [...prev, { id: `a-${Date.now()}`, type: 'ai', content: data.message || 'Here are the results:', timestamp: new Date().toLocaleTimeString(), shopResult: { ...data, negotiationResult } }]);
+        // Notify parent to refresh stats/history after a shop response
+        onPurchaseComplete?.();
       }
     } catch {
       setMessages(prev => [...prev, { id: `e-${Date.now()}`, type: 'error', content: 'Network error. Please try again.', timestamp: new Date().toLocaleTimeString() }]);
@@ -980,6 +982,8 @@ export default function CustomerDashboard() {
   const [recentTxns, setRecentTxns] = useState<Transaction[]>([]);
   const [txnsLoading, setTxnsLoading] = useState(true);
   const [profile, setProfile] = useState<CustomerProfile | null>(rawProfile as CustomerProfile | null);
+  // Incrementing key — forces History/Activity to remount (re-fetch) on each visit
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Redirect if not authenticated or wrong role
   useEffect(() => {
@@ -1015,12 +1019,17 @@ export default function CustomerDashboard() {
     }
   }, [user, loadStats, loadRecentTxns]);
 
-  // Refresh data when switching back to home
+  // Refresh data when switching back to home, history, or activity
   useEffect(() => {
-    if (activeView === 'home' && user) {
-      loadStats();
-      loadRecentTxns();
+    if (user) {
+      // Always refresh stats + recent txns when navigating to these views
+      if (activeView === 'home' || activeView === 'history' || activeView === 'activity') {
+        loadStats();
+        loadRecentTxns();
+        setRefreshKey(k => k + 1); // force-remount History/Activity sub-views
+      }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeView]);
 
   if (authLoading) {
@@ -1133,8 +1142,8 @@ export default function CustomerDashboard() {
               onNavigate={navigate}
             />
           )}
-          {activeView === 'shop' && <ShopView />}
-          {activeView === 'history' && <HistoryView onNavigateToShop={() => navigate('shop')} />}
+          {activeView === 'shop' && <ShopView onPurchaseComplete={() => { loadStats(); loadRecentTxns(); setRefreshKey(k => k + 1); }} />}
+          {activeView === 'history' && <HistoryView key={refreshKey} onNavigateToShop={() => navigate('shop')} />}
           {activeView === 'spending' && (
             <SpendingView
               profile={profile}
@@ -1142,7 +1151,7 @@ export default function CustomerDashboard() {
               onProfileUpdate={p => { setProfile(p); refetch(); }}
             />
           )}
-          {activeView === 'activity' && <ActivityView onNavigateToShop={() => navigate('shop')} />}
+          {activeView === 'activity' && <ActivityView key={refreshKey} onNavigateToShop={() => navigate('shop')} />}
           {activeView === 'profile' && (
             <ProfileView
               user={{ name: user.name, email: user.email, createdAt: user.createdAt }}
