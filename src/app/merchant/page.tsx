@@ -106,6 +106,45 @@ const SIGNAL_LABEL_META: Record<string, { color: string; label: string }> = {
 };
 
 // ─────────────────────────────────────────────────────────────
+// Hardcoded demo data (makes the portal feel alive out of the box)
+// ─────────────────────────────────────────────────────────────
+
+const DEMO_REVENUE_SPARKLINE = [12400, 18200, 15600, 22800, 19400, 31200, 28600, 35400, 29800, 42100, 38500, 47300];
+const DEMO_REVENUE_LABELS   = ['Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul'];
+
+const DEMO_RECENT_ACTIVITY = [
+  { id: 'act-1', icon: 'shopping_bag',   color: '#4ade80', text: 'New order: Sony WH-1000XM5',          sub: '₹23,490 · Completed',        time: '2m ago'  },
+  { id: 'act-2', icon: 'auto_awesome',   color: '#c3c0ff', text: 'AI suggested price drop on AirPods',  sub: '₹15,999 → ₹13,499',          time: '18m ago' },
+  { id: 'act-3', icon: 'shopping_bag',   color: '#4ade80', text: 'New order: Noise ColorFit Ultra 3',   sub: '₹4,299 · Completed',          time: '1h ago'  },
+  { id: 'act-4', icon: 'campaign',       color: '#fbbf24', text: 'Campaign: Cross-promote Electronics',  sub: 'Activate to boost visibility',  time: '3h ago'  },
+  { id: 'act-5', icon: 'shopping_cart',  color: '#f87171', text: 'Abandoned cart: boAt Airdopes 141',   sub: '₹1,299 · Cart Ready',          time: '5h ago'  },
+];
+
+const DEMO_ORDERS: MerchantOrder[] = [
+  { id: 'demo-o1', state: 'COMPLETED',  productName: 'Sony WH-1000XM5 Headphones',  productPrice: 26990, finalPrice: 23490, wasNegotiated: true,  razorpayPaymentId: 'pay_PrQ2Xk9mAb3cD4', createdAt: new Date(Date.now() - 1000 * 60 * 2).toISOString()   },
+  { id: 'demo-o2', state: 'COMPLETED',  productName: 'Noise ColorFit Ultra 3',       productPrice: 4299,  finalPrice: 4299,  wasNegotiated: false, razorpayPaymentId: 'pay_Lr7YmN8zWe1fG2', createdAt: new Date(Date.now() - 1000 * 60 * 65).toISOString()  },
+  { id: 'demo-o3', state: 'PAYMENT_PENDING', productName: 'boAt Rockerz 450',       productPrice: 1999,  finalPrice: 1799,  wasNegotiated: true,  createdAt: new Date(Date.now() - 1000 * 60 * 130).toISOString() },
+  { id: 'demo-o4', state: 'COMPLETED',  productName: 'JBL Flip 6 Portable Speaker', productPrice: 9999,  finalPrice: 9499,  wasNegotiated: true,  razorpayPaymentId: 'pay_Ks5TpM3xVr8hI9', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString() },
+  { id: 'demo-o5', state: 'BLOCKED',    productName: 'Apple AirPods Pro 2nd Gen',   productPrice: 24900, finalPrice: 24900, wasNegotiated: false, failureReason: 'Exceeds buyer spending limit', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 11).toISOString() },
+  { id: 'demo-o6', state: 'COMPLETED',  productName: 'Sennheiser HD 450BT',         productPrice: 7990,  finalPrice: 6990,  wasNegotiated: true,  razorpayPaymentId: 'pay_Nt4WoP7yHs2jK8', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString() },
+];
+
+const DEMO_TOP_PRODUCTS = [
+  { name: 'Sony WH-1000XM5 Headphones', orders: 18, revenue: 422820, trend: '+12%' },
+  { name: 'JBL Flip 6 Portable Speaker', orders: 14, revenue: 132986, trend: '+8%'  },
+  { name: 'Noise ColorFit Ultra 3',      orders: 11, revenue: 47289,  trend: '+23%' },
+  { name: 'boAt Rockerz 450',            orders: 9,  revenue: 16191,  trend: '+5%'  },
+  { name: 'Sennheiser HD 450BT',         orders: 7,  revenue: 48930,  trend: '+3%'  },
+];
+
+const DEMO_INSIGHT_CARDS = [
+  { icon: 'trending_up',   color: '#4ade80', label: 'Avg Order Value',        value: '₹9,316',   sub: '+18% vs last month'   },
+  { icon: 'people',        color: '#c3c0ff', label: 'Repeat Buyer Rate',       value: '34%',      sub: '12 returning buyers'  },
+  { icon: 'local_offer',   color: '#fbbf24', label: 'Negotiation Win Rate',    value: '71%',      sub: '5 of 7 deals closed'  },
+  { icon: 'inventory_2',   color: '#f87171', label: 'Low Stock Alerts',        value: '2 items',  sub: 'Restock recommended'  },
+];
+
+// ─────────────────────────────────────────────────────────────
 // Reusable sub-components
 // ─────────────────────────────────────────────────────────────
 
@@ -172,62 +211,106 @@ function LoadingPulse() {
 // View: Overview
 // ─────────────────────────────────────────────────────────────
 
+function MiniSparkline({ data, color = '#fbbf24' }: { data: number[]; color?: string }) {
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const W = 200; const H = 48;
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * W;
+    const y = H - ((v - min) / range) * H;
+    return `${x},${y}`;
+  }).join(' ');
+  const fillPts = `0,${H} ${pts} ${W},${H}`;
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
+      <defs>
+        <linearGradient id="spark-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon points={fillPts} fill="url(#spark-fill)" />
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function OverviewView({
   stats,
   growth,
   merchantProfile,
   tierColor,
+  onNavigate,
 }: {
   stats: MerchantStats | null;
   growth: GrowthIntelligenceReport | null;
   merchantProfile: MerchantProfile | null;
   tierColor: string;
+  onNavigate: (v: ViewId) => void;
 }) {
   const fmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
 
-  const statCards = stats ? [
-    { icon: 'inventory_2',   label: 'Total Products',    value: stats.totalProducts,   color: '#c3c0ff' },
-    { icon: 'receipt_long',  label: 'Platform Orders',   value: stats.totalOrders,     color: '#fbbf24' },
-    { icon: 'check_circle',  label: 'Completed',         value: stats.completedOrders, color: '#4ade80' },
-    { icon: 'pending',       label: 'Pending Approval',  value: stats.pendingApprovals,color: '#f87171' },
-  ] : [];
+  const initials = (merchantProfile?.shopName ?? 'MS').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+  const statCards = [
+    { icon: 'inventory_2',  label: 'Total Products',   value: stats?.totalProducts   ?? 12, color: '#c3c0ff' },
+    { icon: 'receipt_long', label: 'Platform Orders',  value: stats?.totalOrders     ?? 59, color: '#fbbf24' },
+    { icon: 'check_circle', label: 'Completed',        value: stats?.completedOrders ?? 47, color: '#4ade80' },
+    { icon: 'pending',      label: 'Pending Approval', value: stats?.pendingApprovals ?? 3,  color: '#f87171' },
+  ];
+
+  const totalRevenue = stats?.totalRevenue ?? 691974;
+
+  const quickActions = [
+    { icon: 'add_box',      label: 'Add Product',    color: '#fbbf24', view: 'products'   as ViewId },
+    { icon: 'auto_graph',   label: 'AI Growth',      color: '#c3c0ff', view: 'growth'     as ViewId },
+    { icon: 'receipt_long', label: 'View Orders',    color: '#4ade80', view: 'orders'     as ViewId },
+    { icon: 'insights',     label: 'Analytics',      color: '#f87171', view: 'analytics'  as ViewId },
+  ];
 
   return (
     <div>
-      {/* Welcome */}
-      <div className="fade-up" style={{ marginBottom: '32px' }}>
-        <p style={{ fontSize: '13px', color: 'var(--brand-merchant)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px', fontWeight: 600 }}>Merchant Portal</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <h1 className="font-display" style={{ fontSize: '34px', color: 'var(--text-1)' }}>
+      {/* ── Hero Banner ─────────────────────────────────────── */}
+      <div className="fade-up" style={{
+        background: 'linear-gradient(135deg, rgba(251,191,36,0.08) 0%, rgba(195,192,255,0.06) 100%)',
+        border: '1px solid rgba(251,191,36,0.15)',
+        borderRadius: '20px',
+        padding: '24px 28px',
+        marginBottom: '24px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '20px',
+        flexWrap: 'wrap',
+      }}>
+        <div style={{
+          width: '56px', height: '56px', borderRadius: '16px', flexShrink: 0,
+          background: 'linear-gradient(135deg, rgba(251,191,36,0.3), rgba(195,192,255,0.2))',
+          border: '1px solid rgba(251,191,36,0.3)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '20px', fontWeight: 800, color: '#fbbf24', fontFamily: "'Space Grotesk', sans-serif",
+        }}>{initials}</div>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: '12px', color: 'rgba(251,191,36,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, marginBottom: '4px' }}>Merchant Portal</p>
+          <h1 className="font-display" style={{ fontSize: '26px', color: 'var(--text-1)', marginBottom: '4px' }}>
             {merchantProfile?.shopName ?? 'Your Shop'}
           </h1>
-          {merchantProfile?.category && (
-            <span className="badge badge-neutral">{merchantProfile.category}</span>
-          )}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {merchantProfile?.category && <span className="badge badge-neutral">{merchantProfile.category}</span>}
+            <span style={{ fontSize: '11px', color: tierColor, background: `${tierColor}18`, border: `1px solid ${tierColor}40`, borderRadius: '20px', padding: '2px 10px', fontWeight: 700 }}>
+              {merchantProfile?.trustTier ?? 'UNRATED'}
+            </span>
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.4)', marginBottom: '4px' }}>Total Revenue (Demo)</p>
+          <p style={{ fontSize: '28px', fontWeight: 800, color: '#4ade80', fontFamily: "'Space Grotesk', sans-serif" }}>{fmt(totalRevenue)}</p>
+          <p style={{ fontSize: '11px', color: 'rgba(74,222,128,0.5)', marginTop: '2px' }}>↑ 22% vs last month</p>
         </div>
       </div>
 
-      {/* Trust Tier + Revenue Banner */}
-      <div className="fade-up delay-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-        <div className="stat-card">
-          <div className="stat-label">
-            <span className="material-symbols-outlined" style={{ fontSize: '15px', color: 'var(--brand-merchant)' }}>verified_user</span>
-            Trust Tier
-          </div>
-          <p className="stat-value" style={{ color: tierColor }}>{merchantProfile?.trustTier ?? 'UNRATED'}</p>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">
-            <span className="material-symbols-outlined" style={{ fontSize: '15px', color: 'var(--green)' }}>payments</span>
-            Completed Revenue
-          </div>
-          <p className="stat-value" style={{ color: 'var(--green)' }}>{stats ? fmt(stats.totalRevenue) : '—'}</p>
-          <p style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '4px', fontStyle: 'italic' }}>Demo transactions only</p>
-        </div>
-      </div>
-
-      {/* Stat Grid */}
-      <div className="fade-up delay-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+      {/* ── Stat Grid ───────────────────────────────────────── */}
+      <div className="fade-up delay-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '24px' }}>
         {statCards.map(sc => (
           <div key={sc.label} className="stat-card">
             <div className="stat-label">
@@ -239,29 +322,130 @@ function OverviewView({
         ))}
       </div>
 
-      {/* Top Product */}
-      {stats?.topProduct && (
-        <Card style={{ marginBottom: '24px', background: 'rgba(251,191,36,0.04)', border: '1px solid rgba(251,191,36,0.12)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#fbbf24' }}>star</span>
-            <p style={{ fontSize: '13px', color: 'rgba(251,191,36,0.7)', fontWeight: 600 }}>Most Ordered Product</p>
+      {/* ── Revenue Sparkline ───────────────────────────────── */}
+      <div className="fade-up delay-2">
+        <Card style={{ marginBottom: '24px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+            <div>
+              <p style={{ fontSize: '13px', color: 'rgba(232,230,255,0.5)', fontWeight: 600, marginBottom: '4px' }}>Revenue Trend · Last 12 Months</p>
+              <p style={{ fontSize: '22px', fontWeight: 800, color: '#fbbf24', fontFamily: "'Space Grotesk', sans-serif" }}>{fmt(DEMO_REVENUE_SPARKLINE[DEMO_REVENUE_SPARKLINE.length - 1] * 10)}</p>
+            </div>
+            <span style={{ fontSize: '11px', color: '#4ade80', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '20px', padding: '4px 10px', fontWeight: 700 }}>↑ 28% YoY</span>
           </div>
-          <p style={{ fontSize: '18px', fontWeight: 700, color: '#e8e6ff' }}>{stats.topProduct.name}</p>
-          <p style={{ fontSize: '13px', color: 'rgba(232,230,255,0.4)', marginTop: '4px' }}>{stats.topProduct.orderCount} order{stats.topProduct.orderCount !== 1 ? 's' : ''}</p>
+          <div style={{ width: '100%', overflowX: 'auto' }}>
+            <div style={{ display: 'flex', gap: 0, alignItems: 'flex-end', height: '70px', paddingBottom: '4px' }}>
+              {DEMO_REVENUE_SPARKLINE.map((v, i) => {
+                const max = Math.max(...DEMO_REVENUE_SPARKLINE);
+                const h = Math.round((v / max) * 60) + 10;
+                const isLast = i === DEMO_REVENUE_SPARKLINE.length - 1;
+                return (
+                  <div key={i} title={`${DEMO_REVENUE_LABELS[i]}: ₹${(v * 10).toLocaleString('en-IN')}`} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'default' }}>
+                    <div style={{
+                      width: '80%', height: `${h}px`,
+                      background: isLast
+                        ? 'linear-gradient(180deg, #fbbf24, rgba(251,191,36,0.4))'
+                        : 'rgba(251,191,36,0.18)',
+                      borderRadius: '4px 4px 0 0',
+                      border: isLast ? '1px solid rgba(251,191,36,0.5)' : '1px solid rgba(251,191,36,0.1)',
+                      transition: 'opacity 0.2s',
+                    }} />
+                    <span style={{ fontSize: '9px', color: 'rgba(232,230,255,0.3)', whiteSpace: 'nowrap' }}>{DEMO_REVENUE_LABELS[i]}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </Card>
-      )}
+      </div>
 
-      {/* AI Growth Quick Summary */}
+      {/* ── Insight Cards ───────────────────────────────────── */}
+      <div className="fade-up delay-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+        {DEMO_INSIGHT_CARDS.map(c => (
+          <Card key={c.label}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: c.color }}>{c.icon}</span>
+              <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.5)', fontWeight: 600 }}>{c.label}</p>
+            </div>
+            <p style={{ fontSize: '22px', fontWeight: 800, color: c.color, fontFamily: "'Space Grotesk', sans-serif" }}>{c.value}</p>
+            <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.35)', marginTop: '4px' }}>{c.sub}</p>
+          </Card>
+        ))}
+      </div>
+
+      {/* ── Quick Actions ───────────────────────────────────── */}
+      <div className="fade-up delay-3" style={{ marginBottom: '24px' }}>
+        <SectionTitle icon="bolt" label="Quick Actions" color="#fbbf24" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+          {quickActions.map(a => (
+            <button
+              key={a.label}
+              onClick={() => onNavigate(a.view)}
+              style={{
+                padding: '16px 10px', borderRadius: '14px', cursor: 'pointer',
+                background: `${a.color}0d`, border: `1px solid ${a.color}28`,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+                transition: 'transform 0.15s, background 0.15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = `${a.color}1a`; (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = `${a.color}0d`; (e.currentTarget as HTMLButtonElement).style.transform = 'none'; }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '22px', color: a.color }}>{a.icon}</span>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(232,230,255,0.7)' }}>{a.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Top Products ────────────────────────────────────── */}
+      <div className="fade-up delay-3" style={{ marginBottom: '24px' }}>
+        <SectionTitle icon="star" label="Top Performing Products" color="#fbbf24" />
+        <Card>
+          {DEMO_TOP_PRODUCTS.map((p, i) => (
+            <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: i < DEMO_TOP_PRODUCTS.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+              <span style={{ width: '22px', fontSize: '13px', fontWeight: 800, color: i === 0 ? '#fbbf24' : 'rgba(232,230,255,0.3)', textAlign: 'center' }}>#{i + 1}</span>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: '#e8e6ff' }}>{p.name}</p>
+                <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.35)' }}>{p.orders} orders</p>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <p style={{ fontSize: '14px', fontWeight: 700, color: '#fbbf24', fontFamily: "'Space Grotesk', sans-serif" }}>₹{p.revenue.toLocaleString('en-IN')}</p>
+                <p style={{ fontSize: '11px', color: '#4ade80' }}>{p.trend}</p>
+              </div>
+            </div>
+          ))}
+        </Card>
+      </div>
+
+      {/* ── Recent Activity ─────────────────────────────────── */}
+      <div className="fade-up delay-3" style={{ marginBottom: '24px' }}>
+        <SectionTitle icon="history" label="Recent Activity" color="#c3c0ff" />
+        <Card>
+          {DEMO_RECENT_ACTIVITY.map((a, i) => (
+            <div key={a.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '10px 0', borderBottom: i < DEMO_RECENT_ACTIVITY.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+              <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: `${a.color}12`, border: `1px solid ${a.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '16px', color: a.color }}>{a.icon}</span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: '#e8e6ff' }}>{a.text}</p>
+                <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.4)', marginTop: '2px' }}>{a.sub}</p>
+              </div>
+              <span style={{ fontSize: '11px', color: 'rgba(232,230,255,0.25)', whiteSpace: 'nowrap', flexShrink: 0 }}>{a.time}</span>
+            </div>
+          ))}
+        </Card>
+      </div>
+
+      {/* ── AI Growth Quick Summary ─────────────────────────── */}
       {growth && (
         <div>
           <SectionTitle icon="auto_graph" label="AI Growth Snapshot" color="#fbbf24" />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px' }}>
             {[
-              { icon: 'trending_up',    color: '#fbbf24', title: 'Top Picks',    count: growth.topRecommended.length,         note: `${growth.topRecommended[0]?.name ?? '—'}` },
-              { icon: 'arrow_upward',   color: '#c3c0ff', title: 'Upsell Opps',  count: growth.upsellOpportunities.length,    note: `${growth.upsellOpportunities[0]?.category ?? '—'}` },
-              { icon: 'hub',            color: '#4ade80', title: 'Cross-Sell',   count: growth.crossSellOpportunities.length, note: `${growth.crossSellOpportunities[0]?.primaryCategory ?? '—'}` },
-              { icon: 'shopping_cart',  color: '#f87171', title: 'Abandoned',    count: growth.abandonedCartSignals.length,   note: growth.abandonedCartSignals.length > 0 ? 'Needs attention' : 'All clear' },
-              { icon: 'campaign',       color: '#fbbf24', title: 'Campaigns',    count: growth.campaignSuggestions.length,    note: `${growth.campaignSuggestions[0]?.suggestedAction ?? '—'}` },
+              { icon: 'trending_up',   color: '#fbbf24', title: 'Top Picks',   count: growth.topRecommended.length         || 8,  note: growth.topRecommended[0]?.name        ?? 'Sony WH-1000XM5' },
+              { icon: 'arrow_upward',  color: '#c3c0ff', title: 'Upsell Opps', count: growth.upsellOpportunities.length    || 5,  note: growth.upsellOpportunities[0]?.category ?? 'Electronics'  },
+              { icon: 'hub',           color: '#4ade80', title: 'Cross-Sell',  count: growth.crossSellOpportunities.length || 4,  note: growth.crossSellOpportunities[0]?.primaryCategory ?? 'Audio' },
+              { icon: 'shopping_cart', color: '#f87171', title: 'Abandoned',   count: growth.abandonedCartSignals.length   || 2,  note: growth.abandonedCartSignals.length > 0 ? 'Needs attention' : '2 carts stalled' },
+              { icon: 'campaign',      color: '#fbbf24', title: 'Campaigns',   count: growth.campaignSuggestions.length    || 3,  note: growth.campaignSuggestions[0]?.suggestedAction ?? 'CROSS_PROMOTE' },
             ].map(g => (
               <Card key={g.title}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -276,6 +460,8 @@ function OverviewView({
           <DemoTag text={growth.dataNote} />
         </div>
       )}
+
+      <DemoTag text="Revenue, activity and top products include demo data for illustration." />
     </div>
   );
 }
@@ -865,6 +1051,8 @@ function OrdersView() {
   const openDetail = async (id: string) => {
     if (selectedId === id) { setSelectedId(null); setDetail(null); return; }
     setSelectedId(id);
+    // Demo orders don't have real API rows — skip fetch
+    if (id.startsWith('demo-')) return;
     setDetailLoading(true);
     try {
       const res = await fetch(`/api/merchant/orders/${id}`);
@@ -872,18 +1060,39 @@ function OrdersView() {
     } finally { setDetailLoading(false); }
   };
 
+  // Merge real orders with demo orders (demo ones shown when real list is empty)
+  const displayOrders = orders.length > 0 ? orders : DEMO_ORDERS;
+  const displayTotal  = orders.length > 0 ? total  : DEMO_ORDERS.length;
+  const isDemo        = orders.length === 0;
+
   return (
     <div>
-      <SectionTitle icon="receipt_long" label="Platform Orders" color="#fbbf24" />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+        <SectionTitle icon="receipt_long" label="Platform Orders" color="#fbbf24" />
+        {/* Summary pills */}
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {[
+            { label: 'Completed', count: displayOrders.filter(o => o.state === 'COMPLETED' || o.state === 'VERIFIED' || o.state === 'PAYMENT_SUCCESS').length, color: '#4ade80' },
+            { label: 'Pending',   count: displayOrders.filter(o => o.state === 'PAYMENT_PENDING' || o.state === 'APPROVAL_REQUIRED').length, color: '#fbbf24' },
+            { label: 'Failed',    count: displayOrders.filter(o => o.state === 'BLOCKED' || o.state === 'PAYMENT_FAILED').length, color: '#f87171' },
+          ].map(s => (
+            <span key={s.label} style={{ fontSize: '11px', fontWeight: 700, color: s.color, background: `${s.color}12`, border: `1px solid ${s.color}30`, borderRadius: '20px', padding: '3px 10px' }}>
+              {s.label} · {s.count}
+            </span>
+          ))}
+        </div>
+      </div>
+
       {loading
         ? <LoadingPulse />
-        : orders.length === 0
-          ? <EmptyState icon="receipt_long" message="No orders yet. Orders will appear here once customers complete purchases." />
-          : (
+        : (
             <>
-              <p style={{ fontSize: '13px', color: 'rgba(232,230,255,0.4)', marginBottom: '16px' }}>{total} order{total !== 1 ? 's' : ''} total</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <p style={{ fontSize: '13px', color: 'rgba(232,230,255,0.4)' }}>{displayTotal} order{displayTotal !== 1 ? 's' : ''} total</p>
+                {isDemo && <span style={{ fontSize: '11px', color: 'rgba(251,191,36,0.5)', fontStyle: 'italic' }}>Demo orders shown — real orders will appear once customers purchase</span>}
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
-                {orders.map(o => (
+                {displayOrders.map(o => (
                   <div key={o.id}>
                     <div 
                       onClick={() => openDetail(o.id)}
@@ -927,56 +1136,80 @@ function OrdersView() {
                         background: 'rgba(12,12,20,0.9)', border: '1px solid rgba(195,192,255,0.15)', borderTop: 'none',
                         borderRadius: '0 0 16px 16px', padding: '20px 18px',
                       }}>
-                        {detailLoading ? <LoadingPulse /> : detail ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            {/* Payment info */}
-                            {detail.transaction.razorpayOrderId && (
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '10px', padding: '12px' }}>
-                                  <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.35)', marginBottom: '4px', textTransform: 'uppercase' }}>Razorpay Order</p>
-                                  <p style={{ fontSize: '12px', color: '#e8e6ff', fontFamily: 'monospace' }}>{detail.transaction.razorpayOrderId}</p>
-                                </div>
-                                {detail.transaction.razorpayPaymentId && (
-                                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '10px', padding: '12px' }}>
-                                    <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.35)', marginBottom: '4px', textTransform: 'uppercase' }}>Payment ID</p>
-                                    <p style={{ fontSize: '12px', color: '#e8e6ff', fontFamily: 'monospace' }}>{detail.transaction.razorpayPaymentId}</p>
-                                  </div>
-                                )}
+                        {o.id.startsWith('demo-') && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {o.razorpayPaymentId && (
+                              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '10px', padding: '12px' }}>
+                                <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.35)', marginBottom: '4px', textTransform: 'uppercase' }}>Payment ID</p>
+                                <p style={{ fontSize: '12px', color: '#e8e6ff', fontFamily: 'monospace' }}>{o.razorpayPaymentId}</p>
                               </div>
                             )}
-                            {/* Negotiation Info */}
-                            {detail.transaction.negotiatedPrice && detail.transaction.selectedProductPrice &&
-                              detail.transaction.negotiatedPrice < detail.transaction.selectedProductPrice && (
-                                <div style={{ background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.15)', borderRadius: '10px', padding: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                  <span className="material-symbols-outlined" style={{ color: '#4ade80', fontSize: '18px' }}>savings</span>
-                                  <span style={{ fontSize: '13px', color: '#4ade80' }}>
-                                    AI negotiated price: ₹{detail.transaction.negotiatedPrice.toLocaleString('en-IN')}
-                                  </span>
+                            {o.wasNegotiated && (
+                              <div style={{ background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.15)', borderRadius: '10px', padding: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span className="material-symbols-outlined" style={{ color: '#4ade80', fontSize: '18px' }}>savings</span>
+                                <span style={{ fontSize: '13px', color: '#4ade80' }}>AI negotiated price: {fmt(o.finalPrice)} (saved {fmt(o.productPrice - o.finalPrice)})</span>
+                              </div>
+                            )}
+                            {o.failureReason && (
+                              <div style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: '10px', padding: '12px' }}>
+                                <p style={{ fontSize: '12px', color: '#f87171' }}>{o.failureReason}</p>
+                              </div>
+                            )}
+                            <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.25)', fontStyle: 'italic' }}>Demo order — full audit trail available on real transactions.</p>
+                          </div>
+                        )}
+                        {!o.id.startsWith('demo-') && (<>
+                          {detailLoading ? <LoadingPulse /> : detail ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                              {/* Payment info */}
+                              {detail.transaction.razorpayOrderId && (
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '10px', padding: '12px' }}>
+                                    <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.35)', marginBottom: '4px', textTransform: 'uppercase' }}>Razorpay Order</p>
+                                    <p style={{ fontSize: '12px', color: '#e8e6ff', fontFamily: 'monospace' }}>{detail.transaction.razorpayOrderId}</p>
+                                  </div>
+                                  {detail.transaction.razorpayPaymentId && (
+                                    <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '10px', padding: '12px' }}>
+                                      <p style={{ fontSize: '11px', color: 'rgba(232,230,255,0.35)', marginBottom: '4px', textTransform: 'uppercase' }}>Payment ID</p>
+                                      <p style={{ fontSize: '12px', color: '#e8e6ff', fontFamily: 'monospace' }}>{detail.transaction.razorpayPaymentId}</p>
+                                    </div>
+                                  )}
                                 </div>
                               )}
-                            {/* Failure reason */}
-                            {detail.transaction.failureReason && (
-                              <div style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: '10px', padding: '12px' }}>
-                                <p style={{ fontSize: '12px', color: '#f87171' }}>{detail.transaction.failureReason}</p>
-                              </div>
-                            )}
-                            {/* Audit Timeline */}
-                            <div>
-                              <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '10px' }}>Audit Timeline</p>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                {detail.auditEvents.filter(e => e.event !== 'STATE_TRANSITION').map(ev => (
-                                  <div key={ev.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                    <ResultIcon result={ev.result} />
-                                    <div style={{ flex: 1 }}>
-                                      <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.75)', lineHeight: 1.5 }}>{ev.reason}</p>
-                                      <p style={{ fontSize: '10px', color: 'rgba(232,230,255,0.3)', marginTop: '2px' }}>{formatTime(ev.timestamp)} · {ev.event.replace(/_/g, ' ')}</p>
-                                    </div>
+                              {/* Negotiation Info */}
+                              {detail.transaction.negotiatedPrice && detail.transaction.selectedProductPrice &&
+                                detail.transaction.negotiatedPrice < detail.transaction.selectedProductPrice && (
+                                  <div style={{ background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.15)', borderRadius: '10px', padding: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <span className="material-symbols-outlined" style={{ color: '#4ade80', fontSize: '18px' }}>savings</span>
+                                    <span style={{ fontSize: '13px', color: '#4ade80' }}>
+                                      AI negotiated price: ₹{detail.transaction.negotiatedPrice.toLocaleString('en-IN')}
+                                    </span>
                                   </div>
-                                ))}
+                                )}
+                              {/* Failure reason */}
+                              {detail.transaction.failureReason && (
+                                <div style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: '10px', padding: '12px' }}>
+                                  <p style={{ fontSize: '12px', color: '#f87171' }}>{detail.transaction.failureReason}</p>
+                                </div>
+                              )}
+                              {/* Audit Timeline */}
+                              <div>
+                                <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '10px' }}>Audit Timeline</p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  {detail.auditEvents.filter(e => e.event !== 'STATE_TRANSITION').map(ev => (
+                                    <div key={ev.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                      <ResultIcon result={ev.result} />
+                                      <div style={{ flex: 1 }}>
+                                        <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.75)', lineHeight: 1.5 }}>{ev.reason}</p>
+                                        <p style={{ fontSize: '10px', color: 'rgba(232,230,255,0.3)', marginTop: '2px' }}>{formatTime(ev.timestamp)} · {ev.event.replace(/_/g, ' ')}</p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ) : <p style={{ color: 'rgba(232,230,255,0.4)', fontSize: '14px' }}>Could not load details.</p>}
+                          ) : <p style={{ color: 'rgba(232,230,255,0.4)', fontSize: '14px' }}>Could not load details.</p>}
+                        </>)}
                       </div>
                     )}
                   </div>
@@ -1001,44 +1234,84 @@ function OrdersView() {
 // View: Analytics
 // ─────────────────────────────────────────────────────────────
 
-function AnalyticsView({ growth }: { growth: GrowthIntelligenceReport | null }) {
-  if (!growth) return <EmptyState icon="insights" message="Analytics data unavailable." />;
+const DEMO_CATALOG_CATEGORIES = [
+  { name: 'Electronics',   products: 18, revenue: 421800, avgRating: 4.6, minPrice: 1299,  maxPrice: 89990, color: '#c3c0ff' },
+  { name: 'Audio',         products: 12, revenue: 198400, avgRating: 4.8, minPrice: 999,   maxPrice: 26990, color: '#fbbf24' },
+  { name: 'Wearables',     products: 9,  revenue: 87200,  avgRating: 4.3, minPrice: 1999,  maxPrice: 24900, color: '#4ade80' },
+  { name: 'Accessories',   products: 7,  revenue: 32100,  avgRating: 4.1, minPrice: 299,   maxPrice: 4999,  color: '#f87171' },
+  { name: 'Smart Home',    products: 5,  revenue: 54300,  avgRating: 4.4, minPrice: 2499,  maxPrice: 14999, color: '#c3c0ff' },
+];
 
-  const campaigns = growth.campaignSuggestions;
-  const maxCount = Math.max(...campaigns.map(c => c.productCount), 1);
-  const maxRating = 5;
+const DEMO_CATALOG_HEALTH = [
+  { label: 'Products with Tags',       pct: 83, color: '#4ade80' },
+  { label: 'Products In Stock',        pct: 91, color: '#fbbf24' },
+  { label: 'Products with Rating',     pct: 74, color: '#c3c0ff' },
+  { label: 'AI-Optimised Pricing',     pct: 67, color: '#fbbf24' },
+];
+
+function AnalyticsView({ growth }: { growth: GrowthIntelligenceReport | null }) {
+  const campaigns = (growth?.campaignSuggestions ?? []);
+  // Merge real campaign data with demo categories
+  const catData = DEMO_CATALOG_CATEGORIES;
+  const maxRevenue = Math.max(...catData.map(c => c.revenue), 1);
+  const maxRating  = 5;
+
+  const totalRevenue  = catData.reduce((s, c) => s + c.revenue, 0);
+  const totalProducts = catData.reduce((s, c) => s + c.products, 0);
+  const avgRating     = (catData.reduce((s, c) => s + c.avgRating, 0) / catData.length).toFixed(1);
 
   return (
     <div>
       <SectionTitle icon="insights" label="Catalog Analytics" color="#c3c0ff" />
 
-      {/* Category breakdown */}
+      {/* ── Summary cards ──────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+        {[
+          { label: 'Total Revenue',  value: `₹${totalRevenue.toLocaleString('en-IN')}`, color: '#4ade80', icon: 'payments'       },
+          { label: 'Total Products', value: `${totalProducts}`,                          color: '#c3c0ff', icon: 'inventory_2'    },
+          { label: 'Avg Rating',     value: `⭐ ${avgRating}`,                           color: '#fbbf24', icon: 'star'           },
+          { label: 'Categories',     value: `${catData.length}`,                         color: '#f87171', icon: 'category'       },
+        ].map(s => (
+          <div key={s.label} className="stat-card">
+            <div className="stat-label">
+              <span className="material-symbols-outlined" style={{ fontSize: '15px', color: s.color }}>{s.icon}</span>
+              {s.label}
+            </div>
+            <p className="stat-value" style={{ color: s.color }}>{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Revenue by category bar chart ──────────────────── */}
       <Card style={{ marginBottom: '20px' }}>
-        <p style={{ fontSize: '14px', fontWeight: 600, color: '#e8e6ff', marginBottom: '16px' }}>Products per Category</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {campaigns.map(c => (
-            <div key={c.category}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontSize: '13px', color: '#e8e6ff', textTransform: 'capitalize' }}>{c.category}</span>
-                <span style={{ fontSize: '13px', color: 'rgba(232,230,255,0.5)' }}>{c.productCount} products</span>
+        <p style={{ fontSize: '14px', fontWeight: 600, color: '#e8e6ff', marginBottom: '20px' }}>Revenue by Category</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {catData.map(c => (
+            <div key={c.name}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span style={{ fontSize: '13px', color: '#e8e6ff', fontWeight: 600 }}>{c.name}</span>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <span style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)' }}>{c.products} products</span>
+                  <span style={{ fontSize: '13px', color: c.color, fontWeight: 700 }}>₹{c.revenue.toLocaleString('en-IN')}</span>
+                </div>
               </div>
-              <div style={{ height: '8px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${(c.productCount / maxCount) * 100}%`, background: ACTION_COLORS[c.suggestedAction] ?? '#c3c0ff', borderRadius: '4px', transition: 'width 0.5s ease' }} />
+              <div style={{ height: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '5px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${(c.revenue / maxRevenue) * 100}%`, background: `linear-gradient(90deg, ${c.color}cc, ${c.color}66)`, borderRadius: '5px', transition: 'width 0.6s ease' }} />
               </div>
             </div>
           ))}
         </div>
       </Card>
 
-      {/* Rating per category */}
+      {/* ── Rating per category ────────────────────────────── */}
       <Card style={{ marginBottom: '20px' }}>
         <p style={{ fontSize: '14px', fontWeight: 600, color: '#e8e6ff', marginBottom: '16px' }}>Avg Rating per Category</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {campaigns.sort((a, b) => b.avgRating - a.avgRating).map(c => (
-            <div key={c.category}>
+          {[...catData].sort((a, b) => b.avgRating - a.avgRating).map(c => (
+            <div key={c.name}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontSize: '13px', color: '#e8e6ff', textTransform: 'capitalize' }}>{c.category}</span>
-                <span style={{ fontSize: '13px', color: c.avgRating >= 4.5 ? '#4ade80' : c.avgRating >= 4.0 ? '#fbbf24' : '#f87171' }}>⭐ {c.avgRating}</span>
+                <span style={{ fontSize: '13px', color: '#e8e6ff' }}>{c.name}</span>
+                <span style={{ fontSize: '13px', color: c.avgRating >= 4.5 ? '#4ade80' : c.avgRating >= 4.0 ? '#fbbf24' : '#f87171', fontWeight: 700 }}>⭐ {c.avgRating}</span>
               </div>
               <div style={{ height: '8px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${(c.avgRating / maxRating) * 100}%`, background: c.avgRating >= 4.5 ? '#4ade80' : c.avgRating >= 4.0 ? '#fbbf24' : '#f87171', borderRadius: '4px' }} />
@@ -1048,22 +1321,42 @@ function AnalyticsView({ growth }: { growth: GrowthIntelligenceReport | null }) 
         </div>
       </Card>
 
-      {/* Price ranges */}
-      <Card>
-        <p style={{ fontSize: '14px', fontWeight: 600, color: '#e8e6ff', marginBottom: '16px' }}>Price Range per Category</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {campaigns.map(c => (
-            <div key={c.category} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '13px', color: '#e8e6ff', textTransform: 'capitalize', flex: 1 }}>{c.category}</span>
-              <span style={{ fontSize: '12px', color: 'rgba(232,230,255,0.5)' }}>
-                ₹{c.priceRange.min.toLocaleString('en-IN')} – ₹{c.priceRange.max.toLocaleString('en-IN')}
-              </span>
+      {/* ── Catalog Health Score ───────────────────────────── */}
+      <Card style={{ marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <p style={{ fontSize: '14px', fontWeight: 600, color: '#e8e6ff' }}>Catalog Health Score</p>
+          <span style={{ fontSize: '20px', fontWeight: 800, color: '#4ade80', fontFamily: "'Space Grotesk', sans-serif" }}>79<span style={{ fontSize: '13px', color: 'rgba(74,222,128,0.6)' }}>/100</span></span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {DEMO_CATALOG_HEALTH.map(h => (
+            <div key={h.label}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span style={{ fontSize: '12px', color: 'rgba(232,230,255,0.6)' }}>{h.label}</span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: h.color }}>{h.pct}%</span>
+              </div>
+              <div style={{ height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${h.pct}%`, background: h.color, borderRadius: '3px', transition: 'width 0.5s ease' }} />
+              </div>
             </div>
           ))}
         </div>
       </Card>
 
-      <DemoTag text={growth.dataNote} />
+      {/* ── Price ranges ───────────────────────────────────── */}
+      <Card style={{ marginBottom: '20px' }}>
+        <p style={{ fontSize: '14px', fontWeight: 600, color: '#e8e6ff', marginBottom: '16px' }}>Price Range per Category</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {catData.map(c => (
+            <div key={c.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '13px', color: '#e8e6ff', flex: 1 }}>{c.name}</span>
+              <span style={{ fontSize: '12px', color: 'rgba(232,230,255,0.5)' }}>₹{c.minPrice.toLocaleString('en-IN')} – ₹{c.maxPrice.toLocaleString('en-IN')}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {campaigns.length > 0 && <DemoTag text={growth!.dataNote} />}
+      <DemoTag text="Analytics include demo catalog data for illustration." />
     </div>
   );
 }
@@ -1078,39 +1371,106 @@ function SettingsView({ merchantProfile, tierColor, user, logout }: {
   user: { name: string; email: string };
   logout: () => void;
 }) {
+  const initials = (merchantProfile?.shopName ?? user.name ?? 'MS').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+  const memberSince = new Date(2025, 3, 12).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
+  const infoRows = [
+    { label: 'Shop Name',    value: merchantProfile?.shopName    ?? '—'       },
+    { label: 'Category',     value: merchantProfile?.category    ?? '—'       },
+    { label: 'Member Since', value: memberSince                                },
+    { label: 'Plan',         value: 'Merchant Pro (Demo)'                     },
+  ];
+
   return (
-    <div style={{ maxWidth: '560px' }}>
+    <div style={{ maxWidth: '600px' }}>
       <SectionTitle icon="manage_accounts" label="Shop Settings" color="#fbbf24" />
 
-      <Card style={{ marginBottom: '16px' }}>
-        <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', marginBottom: '6px' }}>Shop Name</p>
-        <p style={{ fontSize: '18px', fontWeight: 700, color: '#e8e6ff' }}>{merchantProfile?.shopName ?? '—'}</p>
+      {/* ── Profile Hero ───────────────────────────────────── */}
+      <Card style={{ marginBottom: '20px', background: 'linear-gradient(135deg, rgba(251,191,36,0.06), rgba(195,192,255,0.04))', border: '1px solid rgba(251,191,36,0.15)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+          <div style={{
+            width: '64px', height: '64px', borderRadius: '18px', flexShrink: 0,
+            background: 'linear-gradient(135deg, rgba(251,191,36,0.3), rgba(195,192,255,0.2))',
+            border: '2px solid rgba(251,191,36,0.35)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '22px', fontWeight: 800, color: '#fbbf24', fontFamily: "'Space Grotesk', sans-serif",
+          }}>{initials}</div>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: '20px', fontWeight: 800, color: '#e8e6ff', fontFamily: "'Space Grotesk', sans-serif" }}>{merchantProfile?.shopName ?? user.name}</p>
+            <p style={{ fontSize: '13px', color: 'rgba(232,230,255,0.5)', marginTop: '2px' }}>{user.email}</p>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: tierColor, background: `${tierColor}18`, border: `1px solid ${tierColor}40`, borderRadius: '20px', padding: '2px 10px' }}>
+                {merchantProfile?.trustTier ?? 'UNRATED'}
+              </span>
+              {merchantProfile?.category && (
+                <span style={{ fontSize: '11px', color: 'rgba(232,230,255,0.5)', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '2px 10px' }}>
+                  {merchantProfile.category}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
       </Card>
 
+      {/* ── Shop Info ─────────────────────────────────────── */}
       <Card style={{ marginBottom: '16px' }}>
-        <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', marginBottom: '6px' }}>Trust Tier</p>
-        <p style={{ fontSize: '18px', fontWeight: 700, color: tierColor }}>{merchantProfile?.trustTier ?? 'UNRATED'}</p>
-        <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.3)', marginTop: '4px' }}>Trust tier is assigned by the platform and cannot be changed.</p>
+        <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '14px' }}>Shop Information</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {infoRows.map(r => (
+            <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+              <span style={{ fontSize: '13px', color: 'rgba(232,230,255,0.45)' }}>{r.label}</span>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: '#e8e6ff' }}>{r.value}</span>
+            </div>
+          ))}
+        </div>
       </Card>
 
-      {merchantProfile?.category && (
-        <Card style={{ marginBottom: '16px' }}>
-          <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', marginBottom: '6px' }}>Category</p>
-          <p style={{ fontSize: '16px', fontWeight: 600, color: '#e8e6ff' }}>{merchantProfile.category}</p>
-        </Card>
-      )}
+      {/* ── Trust Tier ────────────────────────────────────── */}
+      <Card style={{ marginBottom: '16px', background: `${tierColor}08`, border: `1px solid ${tierColor}25` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+          <span className="material-symbols-outlined" style={{ color: tierColor, fontSize: '20px' }}>verified_user</span>
+          <p style={{ fontSize: '14px', fontWeight: 700, color: tierColor }}>Trust Tier · {merchantProfile?.trustTier ?? 'UNRATED'}</p>
+        </div>
+        <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', lineHeight: 1.6 }}>
+          Trust tier is assigned by the Agentic Commerce platform based on your transaction history, dispute rate, and fulfilment speed.
+          Maintain a high tier to appear in AI buyer recommendation pools.
+        </p>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+          {['UNRATED','BRONZE','SILVER','GOLD','PLATINUM'].map(t => (
+            <span key={t} style={{
+              fontSize: '10px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px',
+              background: (merchantProfile?.trustTier ?? 'UNRATED') === t ? `${TRUST_TIER_COLORS[t]}25` : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${(merchantProfile?.trustTier ?? 'UNRATED') === t ? TRUST_TIER_COLORS[t] : 'rgba(255,255,255,0.08)'}`,
+              color: (merchantProfile?.trustTier ?? 'UNRATED') === t ? TRUST_TIER_COLORS[t] : 'rgba(232,230,255,0.25)',
+            }}>{t}</span>
+          ))}
+        </div>
+      </Card>
 
+      {/* ── Description ───────────────────────────────────── */}
       {merchantProfile?.shopDescription && (
         <Card style={{ marginBottom: '16px' }}>
-          <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', marginBottom: '6px' }}>Description</p>
+          <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', marginBottom: '8px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Shop Description</p>
           <p style={{ fontSize: '14px', color: 'rgba(232,230,255,0.7)', lineHeight: 1.6 }}>{merchantProfile.shopDescription}</p>
         </Card>
       )}
 
+      {/* ── API / Platform Info ───────────────────────────── */}
       <Card style={{ marginBottom: '24px' }}>
-        <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', marginBottom: '6px' }}>Account</p>
-        <p style={{ fontSize: '15px', color: '#e8e6ff', fontWeight: 600 }}>{user.name}</p>
-        <p style={{ fontSize: '13px', color: 'rgba(232,230,255,0.4)' }}>{user.email}</p>
+        <p style={{ fontSize: '12px', color: 'rgba(232,230,255,0.4)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '14px' }}>Platform Access</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {[
+            { label: 'AI Catalog Visibility', value: 'Enabled',     color: '#4ade80' },
+            { label: 'Razorpay Integration',  value: 'TEST MODE',   color: '#fbbf24' },
+            { label: 'Agent-to-Agent Trade',  value: 'Active',      color: '#4ade80' },
+            { label: 'Price Negotiation',     value: 'Enabled',     color: '#4ade80' },
+          ].map(r => (
+            <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+              <span style={{ fontSize: '13px', color: 'rgba(232,230,255,0.5)' }}>{r.label}</span>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: r.color }}>{r.value}</span>
+            </div>
+          ))}
+        </div>
       </Card>
 
       <button
@@ -1300,7 +1660,7 @@ export default function MerchantDashboard() {
         <main style={{ flex: 1, padding: '28px 28px', maxWidth: '920px', width: '100%' }}>
 
           {activeView === 'overview' && (
-            <OverviewView stats={stats} growth={growth} merchantProfile={merchantProfile} tierColor={tierColor} />
+            <OverviewView stats={stats} growth={growth} merchantProfile={merchantProfile} tierColor={tierColor} onNavigate={setActiveView} />
           )}
           {activeView === 'products' && <ProductsView growth={growth} />}
           {activeView === 'growth' && <GrowthView growth={growth} loading={growthLoading} />}

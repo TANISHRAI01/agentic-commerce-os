@@ -167,19 +167,7 @@ export default function AuthSelectionPage() {
       </div>
 
       {/* Demo note */}
-      <div className="fade-up delay-4" style={{
-        marginTop: '48px', display: 'flex', alignItems: 'center', gap: '8px',
-        padding: '10px 20px',
-        background: 'rgba(195,192,255,0.04)',
-        border: '1px solid rgba(195,192,255,0.10)',
-        borderRadius: 'var(--r-full)',
-        position: 'relative', zIndex: 1,
-      }}>
-        <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--text-3)' }}>info</span>
-        <p style={{ fontSize: '12px', color: 'var(--text-3)' }}>
-          Razorpay AI Buildathon 2026 · Test Mode · No real payments processed
-        </p>
-      </div>
+
     </div>
   );
 }
